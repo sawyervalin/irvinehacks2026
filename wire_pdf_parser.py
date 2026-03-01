@@ -339,6 +339,7 @@ def _map_to_hackathon_schema(
     # -- enrichment.domain -----------------------------------------------------
     domain_enrichment: dict[str, Any] = {
         d: {
+            "domain_exists":      None,
             "domain_age_days":    None,
             "mx_records_present": None,
             "lookalike_detected": None,
@@ -357,6 +358,7 @@ def _map_to_hackathon_schema(
         sb_chk   = checks.get("safe_browsing") or {}
         look_hit = (look_chk.get("risk_contribution") or 0) > 0
         domain_enrichment[primary_domain] = {
+            "domain_exists":      age_chk.get("exists"),
             "domain_age_days":    age_chk.get("age_days"),
             "mx_records_present": mx_chk.get("has_mx"),
             "lookalike_detected": look_hit,
@@ -395,19 +397,20 @@ def _map_to_hackathon_schema(
 # ---------------------------------------------------------------------------
 
 # Named point values — makes the scoring rules self-documenting
-_P_DO_NOT_CALL   = 60
-_P_PRESSURE_WIRE = 45
-_P_RUSHED_CLOSE  = 50
-_P_DUMMY_NAME    = 40
-_P_SUSP_CHARS    = 20
-_P_BAD_ROUTING   = 80
-_P_BANK_MISMATCH = 70
-_P_FOREIGN_BANK  = 60
-_P_LOOKALIKE     = 65
-_P_NEW_DOMAIN    = 60
-_P_NO_MX         = 40
-_P_SCAM_LIST     = 95
-_P_HARD_STOP_MIN = 85
+_P_DO_NOT_CALL      = 75   # explicit "don't verify" is near-definitive BEC fraud language
+_P_PRESSURE_WIRE    = 55   # urgency is the primary BEC manipulation tactic
+_P_RUSHED_CLOSE     = 50
+_P_DUMMY_NAME       = 40
+_P_SUSP_CHARS       = 25   # homograph/Unicode attacks are deliberate, not accidental
+_P_BAD_ROUTING      = 80
+_P_BANK_MISMATCH    = 75   # routing says Chase, doc says Wells Fargo = clear fraud signal
+_P_FOREIGN_BANK     = 60
+_P_LOOKALIKE        = 75   # typosquat domain is the #1 BEC delivery mechanism (FBI IC3)
+_P_NEW_DOMAIN       = 65   # domain registered days before the attack is highly suspicious
+_P_NO_MX            = 55   # no MX = domain can't receive mail = can't be a real business
+_P_SCAM_LIST        = 95
+_P_DOMAIN_NOT_EXIST = 90   # non-existent domain cannot legitimately send wire instructions
+_P_HARD_STOP_MIN    = 85
 
 
 def _compute_risk_assessment(hackathon: dict[str, Any]) -> dict[str, Any]:
@@ -502,6 +505,11 @@ def _compute_risk_assessment(hackathon: dict[str, Any]) -> dict[str, Any]:
                                             "lookalike_detected": True,
                                             "lookalike_to": info.get("lookalike_to")}})
 
+        if info.get("domain_exists") is False:
+            domain_pts += _P_DOMAIN_NOT_EXIST
+            triggered.append({"id": "DOMAIN_NOT_EXIST", "bucket": "domain", "points": _P_DOMAIN_NOT_EXIST,
+                               "evidence": {"domain": domain, "domain_exists": False}})
+
         age = info.get("domain_age_days")
         if age is not None and isinstance(age, (int, float)) and age <= 30:
             domain_pts += _P_NEW_DOMAIN
@@ -523,13 +531,16 @@ def _compute_risk_assessment(hackathon: dict[str, Any]) -> dict[str, Any]:
     banking_pts = min(banking_pts, 100)
     domain_pts  = min(domain_pts,  100)
 
-    overall = round(0.3 * content_pts + 0.4 * banking_pts + 0.3 * domain_pts)
+    overall = round(0.25 * content_pts + 0.40 * banking_pts + 0.35 * domain_pts)
 
     # ── Hard-stop overrides ───────────────────────────────────────────────────
     hard_stop = (
         banking.get("routing_valid") is False
         or any(
-            isinstance(info, dict) and info.get("on_scam_list") is True
+            isinstance(info, dict) and (
+                info.get("on_scam_list") is True
+                or info.get("domain_exists") is False
+            )
             for info in domain_map.values()
         )
     )

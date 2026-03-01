@@ -110,7 +110,7 @@ class DomainVerifier:
                 "creation_date": None,
                 "age_days": None,
                 "source": source,
-                "risk_contribution": 30,
+                "risk_contribution": 90,
             }
 
         if exists is None:
@@ -130,8 +130,8 @@ class DomainVerifier:
 
         if age_days is None:
             risk = 20
-        elif age_days < 30:
-            risk = 40
+        elif age_days <= 30:
+            risk = 60
         elif age_days < 90:
             risk = 25
         elif age_days < 365:

@@ -72,6 +72,7 @@ def _hackathon_doc(
     lookalike=False,
     lookalike_to=None,
     domain_age_days=500,
+    domain_exists=True,
     mx_records=True,
     on_scam_list=False,
     rushed_closing=False,
@@ -108,11 +109,12 @@ def _hackathon_doc(
             },
             "domain": {
                 "firstam.com": {
-                    "domain_age_days": domain_age_days,
+                    "domain_exists":      domain_exists,
+                    "domain_age_days":    domain_age_days,
                     "mx_records_present": mx_records,
                     "lookalike_detected": lookalike,
-                    "lookalike_to": lookalike_to,
-                    "on_scam_list": on_scam_list,
+                    "lookalike_to":       lookalike_to,
+                    "on_scam_list":       on_scam_list,
                 }
             },
         },
@@ -373,6 +375,14 @@ class TestComputeRiskAssessment(unittest.TestCase):
         doc = _hackathon_doc(on_scam_list=True)
         result = _compute_risk_assessment(doc)
         self.assertIn("DOMAIN_ON_SCAM_LIST", _rule_ids(result))
+        self.assertGreaterEqual(result["overall_risk_score"], 85)
+        self.assertEqual(result["risk_tier"], "critical")
+
+    def test_nonexistent_domain_triggers_hard_stop(self):
+        """A domain that does not exist cannot legitimately send wire instructions."""
+        doc = _hackathon_doc(domain_exists=False)
+        result = _compute_risk_assessment(doc)
+        self.assertIn("DOMAIN_NOT_EXIST", _rule_ids(result))
         self.assertGreaterEqual(result["overall_risk_score"], 85)
         self.assertEqual(result["risk_tier"], "critical")
 

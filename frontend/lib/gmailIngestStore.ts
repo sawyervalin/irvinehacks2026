@@ -19,9 +19,26 @@ export interface GmailIngestBatch {
   payload: GmailIngestPayload;
 }
 
+declare global {
+  var __gmailIngestLatestBatch: GmailIngestBatch | null | undefined;
+}
+
 // Ephemeral in-memory storage for prototype use only.
 // This resets whenever the Next.js server restarts or redeploys.
-let latestBatch: GmailIngestBatch | null = null;
+function getStoreSlot(): { value: GmailIngestBatch | null } {
+  if (globalThis.__gmailIngestLatestBatch === undefined) {
+    globalThis.__gmailIngestLatestBatch = null;
+  }
+
+  return {
+    get value() {
+      return globalThis.__gmailIngestLatestBatch ?? null;
+    },
+    set value(batch: GmailIngestBatch | null) {
+      globalThis.__gmailIngestLatestBatch = batch;
+    }
+  };
+}
 
 export function setLatestBatch(payload: GmailIngestPayload): GmailIngestBatch {
   const batch: GmailIngestBatch = {
@@ -31,10 +48,10 @@ export function setLatestBatch(payload: GmailIngestPayload): GmailIngestBatch {
     payload
   };
 
-  latestBatch = batch;
+  getStoreSlot().value = batch;
   return batch;
 }
 
 export function getLatestBatch(): GmailIngestBatch | null {
-  return latestBatch;
+  return getStoreSlot().value;
 }

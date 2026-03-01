@@ -19,7 +19,10 @@ export default function HomePage() {
   const fetchLatest = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch("/api/gmail-ingest/latest", { method: "GET" });
+      const response = await fetch(`/api/gmail-ingest/latest?t=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store"
+      });
       const data = (await response.json()) as LatestIngestResponse;
       setLatest(data);
       if (!data.hasData) {

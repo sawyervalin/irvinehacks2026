@@ -7,6 +7,7 @@ import FinalPanel from "./FinalPanel";
 import BootOverlay from "./BootOverlay";
 import DataField from "./DataField";
 import PanelCarousel from "./PanelCarousel";
+import Navbar from "@/components/Navbar";
 
 const HouseScene = dynamic(() => import("@/components/HouseScene"), { ssr: false });
 
@@ -79,46 +80,8 @@ export default function SpatialPage() {
       {/* ── Cinematic scan line ── */}
       <div className="scan-line" />
 
-      {/* ── Minimal floating nav ── */}
-      <nav
-        className="fixed top-0 left-0 right-0 flex items-center justify-between pointer-events-auto"
-        style={{ zIndex: 20, padding: "28px 48px" }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-geist-mono)",
-            fontSize: "11px",
-            letterSpacing: "0.22em",
-            color: "rgba(26,37,64,0.60)",
-            textTransform: "uppercase",
-          }}
-        >
-          HomeGuard
-        </span>
-        <div className="flex items-center gap-2">
-          <span
-            style={{
-              display: "inline-block",
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "#1C4C70",
-              boxShadow: "0 0 8px rgba(28,76,112,0.30)",
-              animation: "pulse 2s ease-in-out infinite",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "var(--font-geist-mono)",
-              fontSize: "10px",
-              letterSpacing: "0.2em",
-              color: "rgba(28,76,112,0.70)",
-            }}
-          >
-            PROTECTED
-          </span>
-        </div>
-      </nav>
+      {/* ── Shared Navbar — hidden until 25% scroll, fades in at 75% opacity ── */}
+      <Navbar scrollReveal />
 
       {/* ── Scroll Content ── */}
       <main className="relative pointer-events-none" style={{ zIndex: 10 }}>

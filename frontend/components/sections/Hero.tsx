@@ -39,7 +39,7 @@ function Nav() {
             <div className="absolute inset-0 rounded-lg bg-emerald-400 opacity-25 blur-sm" />
           </div>
           <span className="text-sm font-semibold text-white tracking-tight">
-            HomeGuard<span className="text-emerald-400">AI</span>
+            Constryke
           </span>
         </div>
 
@@ -52,7 +52,7 @@ function Nav() {
         </nav>
 
         {/* CTA */}
-        <a href="/dashboard"
+        <a href="/threat-check"
           className="text-xs font-medium px-3.5 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 bg-emerald-500/8 hover:bg-emerald-500/15 transition-colors duration-150">
           Open App
         </a>
@@ -154,7 +154,7 @@ export default function Hero() {
                 transition={{ duration: 0.5, delay: 0.32 }}
                 className="flex flex-row gap-2.5 sm:gap-3"
               >
-                <a href="/dashboard"
+                <a href="/threat-check"
                   className="relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 min-h-[44px] rounded-xl text-sm font-semibold text-white overflow-hidden group transition-transform duration-200 active:scale-95 flex-1 sm:flex-none"
                   style={{ background: "linear-gradient(135deg,#059669,#10b981,#34d399)" }}
                 >

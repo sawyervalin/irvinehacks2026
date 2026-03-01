@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Gmail Search Exporter",
+  "name": "Constryke",
   "version": "1.0.0",
-  "description": "Search Gmail by sender and/or keywords, then export full message data as JSON.",
+  "description": "Constryke — scan Gmail for wire fraud signals before you close.",
   "permissions": ["identity"],
   "host_permissions": ["https://gmail.googleapis.com/*"],
   "optional_host_permissions": ["http://localhost:3000/*"],
@@ -15,7 +15,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Gmail Search Exporter",
+    "default_title": "Constryke",
     "default_popup": "popup.html"
   }
 }

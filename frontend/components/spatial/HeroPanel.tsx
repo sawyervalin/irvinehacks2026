@@ -52,7 +52,7 @@ export default function HeroPanel() {
         }}
       >
         Protect<br />
-        <span style={{ color: "#1C4C70" }}>the Wire.</span>
+        <span style={{ color: "#1C4C70" }}>your Future.</span>
       </motion.h1>
 
       {/* Subtext */}
@@ -78,8 +78,10 @@ export default function HeroPanel() {
         transition={{ duration: 0.8, delay: 1.05 }}
         style={{ display: "flex", gap: 16, flexWrap: "wrap" }}
       >
-        <button
+        <a
+          href="/threat-check"
           style={{
+            display: "inline-block",
             padding: "14px 28px",
             background: "#1C4C70",
             color: "#FFFFFF",
@@ -88,23 +90,24 @@ export default function HeroPanel() {
             letterSpacing: "0.02em",
             border: "none",
             cursor: "pointer",
+            textDecoration: "none",
             transition: "all 0.25s ease",
           }}
           onMouseEnter={e => {
-            const b = e.currentTarget as HTMLButtonElement;
+            const b = e.currentTarget as HTMLAnchorElement;
             b.style.background = "#4B7BA7";
             b.style.transform = "scale(1.02)";
             b.style.boxShadow = "0 4px 20px rgba(28,76,112,0.30)";
           }}
           onMouseLeave={e => {
-            const b = e.currentTarget as HTMLButtonElement;
+            const b = e.currentTarget as HTMLAnchorElement;
             b.style.background = "#1C4C70";
             b.style.transform = "scale(1)";
             b.style.boxShadow = "none";
           }}
         >
           Secure My Closing
-        </button>
+        </a>
 
         <button
           style={{

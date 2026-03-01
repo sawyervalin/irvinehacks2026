@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "../page.module.css";
+import Navbar from "@/components/Navbar";
 
 interface DashboardShellProps {
   children: ReactNode;
@@ -30,17 +31,11 @@ export default function DashboardShell({
   const currentStep = isThreatSummary ? 2 : 1;
 
   return (
-    <main className={styles.pageShell}>
-      <div className={styles.appFrame}>
-        <section className={styles.contentPane}>
-          <header className={styles.topBar}>
-            <div className={styles.logo}>ShieldScope</div>
-            <div className={styles.topLinks}>
-              <span className={styles.topLink}>Realtime Monitor</span>
-              <span className={styles.topLink}>Risk Engine</span>
-              <span className={styles.topLink}>Audit Trail</span>
-            </div>
-          </header>
+    <>
+      <Navbar />
+      <main className={styles.pageShell} style={{ paddingTop: "80px" }}>
+        <div className={styles.appFrame}>
+          <section className={styles.contentPane}>
 
           <div className={styles.headerRow}>
             <h1 className={styles.title}>{title}</h1>
@@ -91,8 +86,9 @@ export default function DashboardShell({
               {primaryLabel}
             </button>
           ) : null}
-        </section>
-      </div>
-    </main>
+          </section>
+        </div>
+      </main>
+    </>
   );
 }

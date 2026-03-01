@@ -55,29 +55,44 @@ interface LatestResultResponse {
 
 const TIER_CONFIG: Record<string, TierCfg> = {
   hard_evidence: {
-    label: "Hard Evidence",
+    label: "Critical Red Flags",
     color: "#C75555",
     bg: "rgba(199,85,85,0.10)",
     border: "rgba(199,85,85,0.36)",
   },
   structural_inconsistencies: {
-    label: "Structural Inconsistencies",
+    label: "Inconsistencies Found",
     color: "#C9843A",
     bg: "rgba(201,132,58,0.10)",
     border: "rgba(201,132,58,0.36)",
   },
   behavioral_linguistic: {
-    label: "Behavioral & Linguistic",
+    label: "Suspicious Messaging Patterns",
     color: "#4B7BA7",
     bg: "rgba(75,123,167,0.12)",
     border: "rgba(75,123,167,0.38)",
   },
   contextual_supporting: {
-    label: "Contextual Supporting",
+    label: "Additional Risk Indicators",
     color: "#7AA85C",
     bg: "rgba(122,168,92,0.12)",
     border: "rgba(122,168,92,0.38)",
   },
+};
+
+const SIGNAL_LABELS: Record<string, string> = {
+  routing_number_mismatch:      "Bank Account Details Don't Match",
+  known_scam_domain:            "Suspicious or Fake Email Domain",
+  newly_created_domain:         "Brand-New Domain Used for Payment Instructions",
+  escrow_name_mismatch:         "Escrow Officer Name Doesn't Match Records",
+  foreign_banking_data:         "Foreign Bank Information in Domestic Transaction",
+  suspicious_unicode_characters:"Hidden or Manipulated Text Detected",
+  pressure_language:            "Urgent or Pressure-Based Language",
+  ai_generated_text:            "Message Appears Artificially Generated",
+  grammatical_errors:           "Unusual Writing or Grammar Patterns",
+  misspellings:                 "Spelling Errors in Professional Communication",
+  dummy_names:                  "Generic or Placeholder Name Used",
+  no_online_presence:           "No Verifiable Online Presence Found",
 };
 
 const SIGNALS_INITIAL = 2;
@@ -479,7 +494,7 @@ function TierCard({
 
       <div className={styles.tierStatRow}>
         <span className={styles.tierStatLabel}>
-          {triggeredSignals.length} of {tier.signals.length} signals detected
+          {triggeredSignals.length} of {tier.signals.length} items flagged
         </span>
         <span className={styles.tierStatValue} style={{ color }}>
           +{triggeredWeight}pts
@@ -502,7 +517,7 @@ function TierCard({
                     style={{ background: active ? color : "rgba(90,107,128,0.22)" }}
                   />
                   <span className={`${styles.signalId} ${!active ? styles.signalIdMuted : ""}`}>
-                    {signal.id}
+                    {SIGNAL_LABELS[signal.id] ?? fallbackLabel(signal.id)}
                   </span>
                 </div>
                 <span

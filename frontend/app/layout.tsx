@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, IBM_Plex_Mono, Public_Sans } from "next/font/google";
+import { ADLaM_Display, IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const display = Cormorant_Garamond({
+const display = ADLaM_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400",
 });
 
 const body = Public_Sans({

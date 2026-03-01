@@ -1,5 +1,5 @@
 html {
-  background: #8cce91;
+  background: #0A1128;
 }
 
 .pageShell {
@@ -7,9 +7,9 @@ html {
   width: 100%;
   padding: clamp(18px, 2vw, 32px);
   background:
-    radial-gradient(circle at 8% 12%, rgba(214, 247, 194, 0.44), transparent 44%),
-    radial-gradient(circle at 92% 88%, rgba(62, 115, 70, 0.24), transparent 48%),
-    #8cce91;
+    /* radial-gradient(circle at 8% 12%, rgba(214, 247, 194, 0.44), transparent 44%),
+    radial-gradient(circle at 92% 88%, rgba(62, 115, 70, 0.24), transparent 48%), */
+    #0A1128;
 }
 
 .appFrame {

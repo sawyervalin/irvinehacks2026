@@ -5,6 +5,7 @@
   "description": "Search Gmail by sender and/or keywords, then export full message data as JSON.",
   "permissions": ["identity"],
   "host_permissions": ["https://gmail.googleapis.com/*"],
+  "optional_host_permissions": ["http://localhost:3000/*"],
   "oauth2": {
     "client_id": "881267663994-50da7mgeim5esl6h1arei8tdeeetqst4.apps.googleusercontent.com",
     "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]

@@ -1,4 +1,9 @@
 import { sanitizeForJsonExport } from "./lib/jsonSanitizer.js";
+import {
+  DEFAULT_APP_BASE_URL,
+  DEFAULT_EXTENSION_API_KEY,
+  sendIngestToApp
+} from "./lib/appBridge.js";
 
 const form = document.getElementById("search-form");
 const senderInput = document.getElementById("senderEmail");
@@ -8,11 +13,54 @@ const statusEl = document.getElementById("status");
 const resultsEl = document.getElementById("results");
 const resultSummaryEl = document.getElementById("resultSummary");
 const downloadBtn = document.getElementById("downloadBtn");
+const sendToAppBtn = document.getElementById("sendToAppBtn");
 const retryBtn = document.getElementById("retryBtn");
 const searchBtn = document.getElementById("searchBtn");
 
 let lastResponse = null;
 let isBusy = false;
+
+function getOriginPattern(url) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}/*`;
+  } catch {
+    return "http://localhost:3000/*";
+  }
+}
+
+function checkHostPermission(originPattern) {
+  if (!chrome.permissions?.contains) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    chrome.permissions.contains({ origins: [originPattern] }, (granted) => {
+      resolve(Boolean(granted));
+    });
+  });
+}
+
+function requestHostPermission(originPattern) {
+  if (!chrome.permissions?.request) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    chrome.permissions.request({ origins: [originPattern] }, (granted) => {
+      resolve(Boolean(granted));
+    });
+  });
+}
+
+async function ensureAppHostPermission(appBaseUrl) {
+  const originPattern = getOriginPattern(appBaseUrl);
+  const hasPermission = await checkHostPermission(originPattern);
+  if (hasPermission) {
+    return true;
+  }
+  return requestHostPermission(originPattern);
+}
 
 function setBusy(busy) {
   isBusy = busy;
@@ -21,6 +69,7 @@ function setBusy(busy) {
   senderDomainInput.disabled = busy;
   searchBtn.disabled = busy;
   retryBtn.disabled = busy;
+  sendToAppBtn.disabled = busy || !lastResponse;
 }
 
 function setStatus(message, tone = "") {
@@ -32,11 +81,13 @@ function showResults(response) {
   resultSummaryEl.textContent = `Matched ${response.count} emails for query: ${response.query}`;
   resultsEl.classList.remove("hidden");
   downloadBtn.disabled = false;
+  sendToAppBtn.disabled = false;
 }
 
 function hideResults() {
   resultsEl.classList.add("hidden");
   downloadBtn.disabled = true;
+  sendToAppBtn.disabled = true;
 }
 
 function setRetryVisible(visible) {
@@ -159,4 +210,42 @@ downloadBtn.addEventListener("click", () => {
     return;
   }
   downloadJson(lastResponse);
+});
+
+sendToAppBtn.addEventListener("click", async () => {
+  if (!lastResponse || isBusy) {
+    return;
+  }
+
+  const appBaseUrl = globalThis.__APP_BASE_URL__ || DEFAULT_APP_BASE_URL;
+  const apiKey = globalThis.__EXTENSION_API_KEY__ || DEFAULT_EXTENSION_API_KEY;
+  const sanitized = sanitizeForJsonExport(lastResponse);
+
+  const hasHostPermission = await ensureAppHostPermission(appBaseUrl);
+  if (!hasHostPermission) {
+    setStatus("Permission to connect to app was denied. You can still download JSON.", "error");
+    return;
+  }
+
+  setBusy(true);
+  setStatus("Sending results to app...");
+
+  try {
+    const response = await sendIngestToApp({
+      data: sanitized,
+      appBaseUrl,
+      apiKey
+    });
+
+    if (!response.ok) {
+      setStatus(`Failed to send results (HTTP ${response.status}). You can retry or download JSON.`, "error");
+      return;
+    }
+
+    setStatus("Results sent to app successfully.", "success");
+  } catch {
+    setStatus("Failed to reach app endpoint. You can retry or download JSON.", "error");
+  } finally {
+    setBusy(false);
+  }
 });

@@ -79,6 +79,12 @@ button[disabled] {
   background: #fff;
 }
 
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .hidden {
   display: none;
 }

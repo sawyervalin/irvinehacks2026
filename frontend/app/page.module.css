@@ -1,0 +1,304 @@
+html {
+    background: #ffffff;
+}
+
+.pageShell {
+  min-height: 100vh;
+  width: 100%;
+  background: #ffffff;
+  padding: clamp(12px, 2vw, 22px);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.appFrame {
+  /* width: min(1240px, 100%); */
+  width: 100%;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: clamp(10px, 1.5vw, 16px);
+}
+
+.sidebar {
+  border-radius: 16px;
+  background: #f7f7f7;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #e0e0e0;
+}
+
+.logo {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f4f3a;
+  padding: 10px 8px;
+}
+
+.menuLabel {
+  color: #8a8f8e;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  padding: 0 8px;
+}
+
+.nav {
+  display: grid;
+  gap: 4px;
+}
+
+.navLink {
+  position: relative;
+  padding: 11px 10px 11px 12px;
+  border-radius: 10px;
+  color: #2f3433;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navLabel {
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.navIcon {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  color: #9ca4a2;
+}
+
+.navIconGrid {
+  grid-template-columns: repeat(2, 6px);
+  grid-template-rows: repeat(2, 6px);
+  gap: 2px;
+}
+
+.navIconGrid span {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.navIconShield span {
+  width: 12px;
+  height: 14px;
+  border: 1.8px solid currentColor;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  clip-path: polygon(50% 100%, 0 75%, 0 0, 100% 0, 100% 75%);
+}
+
+.navItemActive {
+  background: #f3f4f4;
+}
+
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 34px;
+  border-radius: 999px;
+  background: #1f8f5d;
+}
+
+.navItemActive .navIcon,
+.navItemActive .navLabel {
+  color: #1f8f5d;
+}
+
+.contentPane {
+  border-radius: 16px;
+  background: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  padding: clamp(12px, 2vw, 18px);
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.1vw, 2.05rem);
+  line-height: 1.18;
+  color: #1f2326;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #8b9294;
+}
+
+.ctaButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f7fffb;
+  background: linear-gradient(130deg, #1e6a3f, #236f38, #154f36);
+  min-width: 180px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(26, 94, 58, 0.22);
+}
+
+.ctaButton:disabled,
+.softButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.statusText {
+  margin: 10px 0 16px;
+  color: #576063;
+  font-size: 0.9rem;
+}
+
+.grid {
+  display: grid;
+  gap: 20px;
+  max-width: 620px;
+}
+
+.card {
+  border-radius: 16px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 14px;
+}
+
+.chromeCard {
+  background: linear-gradient(135deg, #34783F, #13452D);
+  border: 1px solid #2b6b4b;
+  color: #f4fff8;
+}
+
+.cardTitle {
+  margin: 0 0 12px;
+  font-size: clamp(1.08rem, 1.4vw, 1.2rem);
+  font-weight: 500;
+}
+
+.infoBox {
+  border-radius: 9px;
+  background: #ecedee;
+  border: 2px solid #d5d7d9;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.infoPrimary {
+  margin: 0;
+  color: #1e2426;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.infoSecondary {
+  margin: 4px 0 0;
+  color: #6f7476;
+  font-size: 0.82rem;
+}
+
+.textArea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #d6d8db;
+  padding: 10px;
+  background: #f0f0f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.84rem;
+  color: #1f2424;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.fileInput {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.softButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 18px;
+  min-width: 124px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #194931;
+  background: #f0f3f1;
+  cursor: pointer;
+}
+
+.emptyCanvas {
+  min-height: 520px;
+}
+
+@media (max-width: 980px) {
+  .appFrame {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    gap: 10px;
+  }
+
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .navItemActive::before {
+    display: none;
+  }
+
+  .headerRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ctaButton {
+    width: 100%;
+  }
+
+  .grid {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .pageShell {
+    padding: 8px;
+  }
+
+  .contentPane {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 1.35rem;
+  }
+
+  .nav {
+    grid-template-columns: 1fr;
+  }
+
+  .softButton {
+    width: 100%;
+  }
+}

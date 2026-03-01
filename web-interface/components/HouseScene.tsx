@@ -7,7 +7,7 @@ import * as THREE from "three";
 
 // Shield geometry constants — used for collision detection in ThreatArrow
 const SHIELD_CENTER = new THREE.Vector3(0, 0.55, 0);
-const SHIELD_RADIUS = 1.48; // slightly inside the 1.55 XZ scale of the icosahedron
+const SHIELD_RADIUS = 1.25; // slightly inside the 1.55 XZ scale of the icosahedron
 
 // ─── Solid simulation house ───────────────────────────────────────────────────
 function HouseModel() {
@@ -21,7 +21,7 @@ function HouseModel() {
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2.09 / maxDim;
+    const scale = 1.7 / maxDim;
     clone.scale.setScalar(scale);
 
     // Re-center + sit on ground plane
@@ -111,7 +111,7 @@ function AIShield({
   const t = useRef(0);
 
   // Base scale values (never changed)
-  const BASE_SCALE: [number, number, number] = [1.55, 1.82, 1.55];
+  const BASE_SCALE: [number, number, number] = [1.4, 1.6, 1.4];
 
   useFrame((_, delta) => {
     t.current += delta;
@@ -311,7 +311,7 @@ function ShieldGlow() {
   });
 
   return (
-    <mesh ref={meshRef} scale={[1.72, 2.02, 1.72]} position={[0, 0.55, 0]}>
+    <mesh ref={meshRef} scale={[1.5, 1.7, 1.5]} position={[0, 0.55, 0]}>
       <icosahedronGeometry args={[1, 1]} />
       <meshBasicMaterial
         color="#4B7BA7"

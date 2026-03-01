@@ -42,6 +42,7 @@ const FIELD_LABELS: Record<string, string> = {
   title_company_name:  "Title Company",
   escrow_officer_name: "Escrow Officer",
   sender_email:        "Sender Email",
+  sender_domain:       "Sender Domain",
   receiving_bank_name: "Receiving Bank",
   routing_number:      "Routing Number",
   account_number:      "Account Number",
@@ -51,7 +52,6 @@ const FIELD_LABELS: Record<string, string> = {
   closing_date:        "Closing Date",
 };
 
-// Fields to show in the results card (sender_domain is redundant).
 const FIELD_ORDER = Object.keys(FIELD_LABELS);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

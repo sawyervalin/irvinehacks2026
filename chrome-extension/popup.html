@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gmail Search Exporter</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Gmail Search Exporter</h1>
+
+      <form id="search-form">
+        <label for="senderEmail">Sender Email (optional)</label>
+        <input
+          id="senderEmail"
+          name="senderEmail"
+          type="email"
+          placeholder="sender@example.com"
+          autocomplete="off"
+        />
+
+        <label for="keywords">Keywords (optional)</label>
+        <input
+          id="keywords"
+          name="keywords"
+          type="text"
+          placeholder="invoice march acme"
+          autocomplete="off"
+        />
+
+        <label for="senderDomain">Sender Domain (optional)</label>
+        <input
+          id="senderDomain"
+          name="senderDomain"
+          type="text"
+          placeholder="company.com"
+          autocomplete="off"
+        />
+
+        <button id="searchBtn" type="submit">Search Gmail</button>
+      </form>
+
+      <section id="status" class="status" aria-live="polite"></section>
+
+      <section id="results" class="results hidden">
+        <p id="resultSummary"></p>
+        <button id="downloadBtn" type="button" disabled>Download JSON</button>
+      </section>
+
+      <button id="retryBtn" type="button" class="hidden secondary">Retry Auth</button>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

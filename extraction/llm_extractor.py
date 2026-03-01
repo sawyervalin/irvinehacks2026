@@ -21,47 +21,121 @@ load_dotenv()
 # ── Prompt ─────────────────────────────────────────────────────────────────────
 
 _SYSTEM_PROMPT = (
-    "You extract structured wire instruction data for real estate fraud detection.\n"
-    "Return valid JSON only. No prose. No markdown. No comments.\n"
-    "Use null if missing. Do not guess. Preserve original values.\n"
-    "Normalize dates to YYYY-MM-DD if clear. Normalize phone numbers to E.164 if clear.\n"
-    "Extract all domains from emails and URLs.\n"
-    "Add red_flags for mismatches, urgency language, payment changes, "
-    "free email domains, or inconsistencies."
+    "You are a real-estate wire-instruction extraction + fraud-signal engine.\n"
+    "Return ONLY valid JSON matching the schema exactly. No markdown. No commentary.\n\n"
+
+    "EXTRACTION RULES (be conservative):\n"
+    "- If a field is not present in parsed_text, set it to \"\" (or [] for arrays).\n"
+    "- Do not guess routing/account numbers if not explicitly present.\n"
+    "- Normalize closing_date to YYYY-MM-DD if possible.\n"
+    "- amount should be a string; preserve currency if present (e.g. \"$73,250.00 USD\").\n\n"
+
+    "COMMUNICATION RULES:\n"
+    "- email_body_text: if text contains a clear email body, copy it; otherwise \"\".\n"
+    "- sender_email: extract the first clear email address from the text.\n"
+    "- sender_domain: substring after \"@\" in sender_email; else first domain found.\n\n"
+
+    "INTERNET DATA RULES:\n"
+    "- domains: unique domains from emails/urls found.\n"
+    "- emails: all unique email addresses found.\n"
+    "- urls: all unique urls found.\n\n"
+
+    "SIGNALS_FROM_TEXT RULES:\n"
+    "A) rushed_closing = true if last-minute changes or rushed timing:\n"
+    "   e.g. \"updated wiring instructions\", \"new wire instructions\", \"closing is today\".\n"
+    "B) pressure_to_wire = true if urgency/pressure exists:\n"
+    "   e.g. \"wire immediately\", \"ASAP\", \"urgent\", \"within 1 hour\", \"lose the house\".\n"
+    "C) do_not_call_verify = true if verification is discouraged:\n"
+    "   e.g. \"do not call\", \"only reply by email\", \"do not contact agent/title/escrow\".\n"
+    "For each detected phrase type, include up to 3 verbatim snippets (max 120 chars each) "
+    "in phrase_evidence.*_snippets. If none, leave [].\n"
+    "D) dummy_name_detected = true if placeholder name present (John Doe, Jane Doe, Test, etc.).\n"
+    "   If true, dummy_name_match = exact matched string; else null.\n"
+    "E) suspicious_characters_detected = true if non-ASCII characters appear in key strings.\n"
+    "   If true, include up to 5 tokens containing non-ASCII in non_ascii_examples.\n"
+    "F) misspelling_count / grammar_error_count: set to null if not confident; only output "
+    "numbers for conservative estimates.\n\n"
+
+    "CONFIDENCE SCORING (0.0-1.0) per section:\n"
+    "- baseline = 0.85\n"
+    "- All key fields present and explicit: confidence = 0.95-1.0\n"
+    "- Some present, some missing: confidence = 0.6-0.8\n"
+    "- Mostly missing: confidence = 0.3-0.5\n"
 )
 
 _SCHEMA = """{
-  "document_type": null,
-  "escrow_officer": {"name": null, "title": null, "company": null, "email": null, "phone": null, "domains": []},
-  "other_contacts": [],
-  "transaction": {"property_address": null, "closing_date": null, "escrow_number": null, "loan_number": null},
-  "wire_details": {"beneficiary_name": null, "bank_name": null, "bank_address": null, "routing_number": null, "account_number": null, "swift_code": null, "amount": null},
-  "internet_data": {"domains": [], "emails": [], "urls": []},
-  "red_flags": [],
-  "confidence": 0.0
+  "document_type": "WIRE_TRANSFER_INSTRUCTIONS",
+  "escrow_contact": {
+    "name": "", "company": "", "email": "", "phone": "", "confidence": 0.0
+  },
+  "transaction": {
+    "property_address": "", "closing_date": "", "amount": "", "confidence": 0.0
+  },
+  "wire_details": {
+    "beneficiary_name": "", "bank_name": "", "routing_number": "", "account_number": "", "confidence": 0.0
+  },
+  "communication": {
+    "sender_email": "", "sender_domain": "", "confidence": 0.0
+  },
+  "signals_from_text": {
+    "detected_phrases": {
+      "rushed_closing": false, "pressure_to_wire": false, "do_not_call_verify": false
+    },
+    "phrase_evidence": {
+      "rushed_closing_snippets": [],
+      "pressure_to_wire_snippets": [],
+      "do_not_call_verify_snippets": []
+    },
+    "dummy_name_detected": false,
+    "dummy_name_match": null,
+    "misspelling_count": null,
+    "grammar_error_count": null,
+    "suspicious_characters_detected": false,
+    "non_ascii_examples": []
+  },
+  "internet_data": {
+    "domains": [], "emails": [], "urls": [], "confidence": 0.0
+  }
 }"""
 
 # ── Defaults for missing keys ──────────────────────────────────────────────────
 
 _DEFAULTS: dict = {
-    "document_type": None,
-    "escrow_officer": {
-        "name": None, "title": None, "company": None,
-        "email": None, "phone": None, "domains": [],
+    "document_type": "WIRE_TRANSFER_INSTRUCTIONS",
+    "escrow_contact": {
+        "name": "", "company": "", "email": "", "phone": "", "confidence": 0.0,
     },
-    "other_contacts": [],
     "transaction": {
-        "property_address": None, "closing_date": None,
-        "escrow_number": None, "loan_number": None,
+        "property_address": "", "closing_date": "", "amount": "", "confidence": 0.0,
     },
     "wire_details": {
-        "beneficiary_name": None, "bank_name": None, "bank_address": None,
-        "routing_number": None, "account_number": None,
-        "swift_code": None, "amount": None,
+        "beneficiary_name": "", "bank_name": "", "routing_number": "",
+        "account_number": "", "confidence": 0.0,
     },
-    "internet_data": {"domains": [], "emails": [], "urls": []},
-    "red_flags": [],
-    "confidence": 0.0,
+    "communication": {
+        "sender_email": "", "sender_domain": "", "confidence": 0.0,
+    },
+    "signals_from_text": {
+        "detected_phrases": {
+            "rushed_closing": False,
+            "pressure_to_wire": False,
+            "do_not_call_verify": False,
+        },
+        "phrase_evidence": {
+            "rushed_closing_snippets": [],
+            "pressure_to_wire_snippets": [],
+            "do_not_call_verify_snippets": [],
+        },
+        "dummy_name_detected": False,
+        "dummy_name_match": None,
+        "misspelling_count": None,
+        "grammar_error_count": None,
+        "suspicious_characters_detected": False,
+        "non_ascii_examples": [],
+    },
+    "internet_data": {
+        "domains": [], "emails": [], "urls": [], "confidence": 0.0,
+    },
 }
 
 
@@ -74,6 +148,10 @@ def _fill_defaults(data: dict) -> None:
             for subkey, subdefault in default.items():
                 if subkey not in data[key]:
                     data[key][subkey] = subdefault
+                elif isinstance(subdefault, dict) and isinstance(data[key].get(subkey), dict):
+                    for k2, v2 in subdefault.items():
+                        if k2 not in data[key][subkey]:
+                            data[key][subkey][k2] = v2
 
 
 def _strip_markdown(text: str) -> str:
@@ -86,7 +164,7 @@ def _strip_markdown(text: str) -> str:
 
 # ── Main extractor ─────────────────────────────────────────────────────────────
 
-def extract_wire_fields(document_text: str) -> dict:
+def extract_wire_fields(document_text: str, sender_email: str = "") -> dict:
     """
     Call Gemini with the document text and return structured wire fields.
 
@@ -96,9 +174,10 @@ def extract_wire_fields(document_text: str) -> dict:
     api_key = os.getenv("GOOGLE_API_KEY", "")
     client = genai.Client(api_key=api_key)
 
+    optional_context = f"sender_email: {sender_email}" if sender_email else "(none)"
     user_message = (
-        f"Extract wire-related fields from this document:\n"
-        f"<<<\n{document_text}\n>>>\n\n"
+        f"parsed_text:\n<<<\n{document_text}\n>>>\n\n"
+        f"optional_context: {optional_context}\n\n"
         f"Return JSON matching this schema:\n{_SCHEMA}"
     )
 
@@ -111,7 +190,6 @@ def extract_wire_fields(document_text: str) -> dict:
     )
     raw = _strip_markdown(response.text)
 
-    # Strict JSON parse
     try:
         extracted = json.loads(raw)
     except json.JSONDecodeError as exc:

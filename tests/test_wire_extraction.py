@@ -31,26 +31,55 @@ class TestLLMExtractorJsonParsing(unittest.TestCase):
     def test_valid_json_round_trip(self, MockClient):
         """Well-formed JSON from the LLM is parsed and defaults filled."""
         payload = {
-            "document_type": "Wire Transfer Instructions",
-            "escrow_officer": {
-                "name": "Jane Smith", "title": None, "company": "First American Title",
-                "email": "jane@firstam.com", "phone": "+19495550100", "domains": ["firstam.com"],
+            "document_type": "WIRE_TRANSFER_INSTRUCTIONS",
+            "escrow_contact": {
+                "name": "Jane Smith", "company": "First American Title",
+                "email": "jane@firstam.com", "phone": "+19495550100",
+                "confidence": 0.95,
             },
-            "other_contacts": [],
             "transaction": {
                 "property_address": "123 Main St, Irvine CA 92614",
                 "closing_date": "2026-03-15",
-                "escrow_number": "E-1234", "loan_number": None,
+                "amount": "$350,000.00",
+                "confidence": 0.90,
             },
             "wire_details": {
                 "beneficiary_name": "First American Title",
-                "bank_name": "Wells Fargo", "bank_address": None,
-                "routing_number": "121042882", "account_number": "9876543210",
-                "swift_code": None, "amount": "350000.00",
+                "bank_name": "Wells Fargo",
+                "routing_number": "121042882",
+                "account_number": "9876543210",
+                "confidence": 0.95,
             },
-            "internet_data": {"domains": ["firstam.com"], "emails": ["jane@firstam.com"], "urls": []},
-            "red_flags": [],
-            "confidence": 0.95,
+            "communication": {
+                "sender_email": "jane@firstam.com",
+                "sender_domain": "firstam.com",
+                "email_body_text": "",
+                "confidence": 0.70,
+            },
+            "signals_from_text": {
+                "detected_phrases": {
+                    "rushed_closing": False,
+                    "pressure_to_wire": False,
+                    "do_not_call_verify": False,
+                },
+                "phrase_evidence": {
+                    "rushed_closing_snippets": [],
+                    "pressure_to_wire_snippets": [],
+                    "do_not_call_verify_snippets": [],
+                },
+                "dummy_name_detected": False,
+                "dummy_name_match": None,
+                "misspelling_count": None,
+                "grammar_error_count": None,
+                "suspicious_characters_detected": False,
+                "non_ascii_examples": [],
+            },
+            "internet_data": {
+                "domains": ["firstam.com"],
+                "emails": ["jane@firstam.com"],
+                "urls": [],
+                "confidence": 0.90,
+            },
         }
 
         MockClient.return_value.models.generate_content.return_value = (
@@ -60,10 +89,11 @@ class TestLLMExtractorJsonParsing(unittest.TestCase):
         from extraction.llm_extractor import extract_wire_fields
         result = extract_wire_fields("dummy document text")
 
-        self.assertEqual(result["document_type"], "Wire Transfer Instructions")
+        self.assertEqual(result["document_type"], "WIRE_TRANSFER_INSTRUCTIONS")
         self.assertEqual(result["wire_details"]["routing_number"], "121042882")
-        self.assertEqual(result["escrow_officer"]["email"], "jane@firstam.com")
-        self.assertEqual(result["confidence"], 0.95)
+        self.assertEqual(result["escrow_contact"]["email"], "jane@firstam.com")
+        self.assertEqual(result["communication"]["sender_domain"], "firstam.com")
+        self.assertEqual(result["escrow_contact"]["confidence"], 0.95)
 
     @patch("extraction.llm_extractor.genai.Client")
     def test_missing_keys_filled_with_defaults(self, MockClient):
@@ -78,10 +108,11 @@ class TestLLMExtractorJsonParsing(unittest.TestCase):
         result = extract_wire_fields("partial document")
 
         self.assertEqual(result["document_type"], "Wire Instructions")
-        self.assertIsNone(result["escrow_officer"]["name"])
+        self.assertEqual(result["escrow_contact"]["name"], "")
+        self.assertEqual(result["escrow_contact"]["confidence"], 0.0)
         self.assertEqual(result["internet_data"]["domains"], [])
-        self.assertEqual(result["red_flags"], [])
-        self.assertEqual(result["confidence"], 0.0)
+        self.assertEqual(result["signals_from_text"]["detected_phrases"]["rushed_closing"], False)
+        self.assertIsNone(result["signals_from_text"]["dummy_name_match"])
 
     @patch("extraction.llm_extractor.genai.Client")
     def test_invalid_json_raises_value_error(self, MockClient):

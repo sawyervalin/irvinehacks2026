@@ -8,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 
 from enrichment.domain_age import get_domain_created_date
+from risk_scoring import FREE_EMAIL_DOMAINS, KNOWN_LEGIT_DOMAINS
 
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
@@ -15,15 +16,8 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
 class DomainVerifier:
 
-    _FREE_EMAIL_PROVIDERS: frozenset = frozenset({
-        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com",
-        "icloud.com", "protonmail.com", "mail.com", "ymail.com", "live.com",
-        "msn.com", "yahoo.co.uk", "googlemail.com",
-    })
-
     def __init__(self):
-        self.known_legitimate = self._load_legitimate_domains()
-        self.risk_score = 0
+        self.known_legitimate = KNOWN_LEGIT_DOMAINS
 
     # ── eTLD+1 normalisation ───────────────────────────────────────────────────
 
@@ -68,14 +62,14 @@ class DomainVerifier:
             3. domain parsed from escrow_officer.email
         """
         internet_domains: list = (extracted.get("internet_data") or {}).get("domains", [])
-        escrow_domains:   list = (extracted.get("escrow_officer") or {}).get("domains", [])
-        escrow_email: Optional[str] = (extracted.get("escrow_officer") or {}).get("email")
+        escrow_email: Optional[str] = (
+            (extracted.get("communication") or {}).get("sender_email")
+            or (extracted.get("escrow_contact") or {}).get("email")
+        )
 
         domain: Optional[str] = None
         if internet_domains:
             domain = internet_domains[0]
-        elif escrow_domains:
-            domain = escrow_domains[0]
         elif escrow_email and "@" in escrow_email:
             domain = escrow_email.split("@", 1)[1]
 
@@ -167,7 +161,7 @@ class DomainVerifier:
                 highest_similarity = similarity
                 best_match = legit
 
-        risk = 35 if 0.75 < highest_similarity < 1.0 else 0
+        risk = 35 if highest_similarity > 0.8 else 0
         return {
             "closest_legitimate": best_match,
             "similarity": round(highest_similarity, 3),
@@ -250,7 +244,7 @@ class DomainVerifier:
     # ── Extra checks used by verify_extracted() ───────────────────────────────
 
     def _check_free_email_domain(self, domain: str) -> dict:
-        is_free = domain.lower() in self._FREE_EMAIL_PROVIDERS
+        is_free = domain.lower() in FREE_EMAIL_DOMAINS
         return {"is_free_provider": is_free, "risk_contribution": 25 if is_free else 0}
 
     def _check_missing_fields(self, wire: dict) -> dict:
@@ -271,56 +265,3 @@ class DomainVerifier:
         total = sum(c.get("risk_contribution", 0) for c in checks.values())
         return min(total, 100)
 
-    # ── Legitimate-domain reference list ──────────────────────────────────────
-
-    def _load_legitimate_domains(self) -> list:
-        return [
-            # ── National title companies ──────────────────────────────────────
-            "firstam.com",            # First American Title
-            "fidelitynational.com",   # Fidelity National Title
-            "fntic.com",              # Fidelity National Title Insurance Co.
-            "oldrepublictitle.com",   # Old Republic Title
-            "stewartitle.com",        # Stewart Title
-            "chicagotitle.com",       # Chicago Title
-            "ticortitle.com",         # Ticor Title
-            "commonwealthland.com",   # Commonwealth Land Title
-            "landam.com",             # LandAmerica
-            "titleresourcegroup.com", # Title Resource Group (Realogy)
-            "investors-title.com",    # Investors Title
-            "titleone.com",           # TitleOne
-            "landtitleguarantee.com", # Land Title Guarantee (CO)
-            "alamo-title.com",        # Alamo Title (TX)
-            "vectitle.com",           # VEC Title
-            "nationaltitle.com",      # National Title
-            "rexerainc.com",          # Rexera (formerly PropLogix)
-            "proplogix.com",          # PropLogix / Rexera
-
-            # ── Major mortgage lenders & servicers ───────────────────────────
-            "wellsfargo.com",
-            "bankofamerica.com",
-            "chase.com",
-            "usbank.com",
-            "rocketmortgage.com",
-            "quickenloans.com",
-            "pennymac.com",
-            "loandepot.com",
-            "caliberhomeloans.com",
-            "mrcooper.com",
-            "flagstar.com",
-            "newrez.com",
-            "guaranteedrate.com",
-            "uhm.com",
-            "movement.com",
-            "pnc.com",
-            "truist.com",
-            "regions.com",
-            "citizensbank.com",
-            "suntrust.com",
-
-            # ── Escrow / closing services ─────────────────────────────────────
-            "escrow.com",
-            "snapdocs.com",
-            "notarize.com",
-            "pavaso.com",
-            "indecomm.net",
-        ]

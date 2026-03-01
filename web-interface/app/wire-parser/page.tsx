@@ -515,6 +515,12 @@ export default function WireParserPage() {
                 risk_tier: "low" | "medium" | "high" | "critical";
                 triggered_rules: { id: string; bucket: string; points: number; evidence: Record<string, unknown> }[];
                 recommended_actions: string[];
+                text_signals?: {
+                  bucket_scores: { content: number; domain: number; banking: number };
+                  overall_risk_score: number;
+                  risk_tier: "low" | "medium" | "high";
+                  triggered_rules: { rule: string; points: number }[];
+                };
               } | undefined;
               if (!ra) return null;
 
@@ -580,6 +586,34 @@ export default function WireParserPage() {
                       })}
                     </div>
                   </div>
+
+                  {/* Text-only signals from risk_scoring module */}
+                  {ra.text_signals && ra.text_signals.triggered_rules.length > 0 && (
+                    <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9" }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#374151", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Text Signal Flags
+                        <span style={{
+                          marginLeft: "0.5rem", fontSize: "0.65rem", fontWeight: 600,
+                          padding: "0.1rem 0.45rem", borderRadius: "9999px",
+                          background: "#e0e7ff", color: "#4338ca",
+                        }}>
+                          score {ra.text_signals.overall_risk_score} · {ra.text_signals.risk_tier.toUpperCase()}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                        {ra.text_signals.triggered_rules.map((r, i) => (
+                          <span key={i} style={{
+                            fontSize: "0.68rem", fontWeight: 600, padding: "0.15rem 0.55rem",
+                            borderRadius: "9999px", background: "#fee2e2", color: "#b91c1c",
+                            display: "flex", alignItems: "center", gap: "0.3rem",
+                          }}>
+                            {r.rule.replace(/_/g, " ")}
+                            <span style={{ opacity: 0.7 }}>+{r.points}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Triggered rules */}
                   {ra.triggered_rules.length > 0 && (

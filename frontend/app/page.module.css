@@ -14,14 +14,6 @@
 }
 
 .contentPane {
-  border-radius: 16px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 253, 0.9));
-  border: 1px solid rgba(28, 76, 112, 0.15);
-  box-shadow:
-    0 26px 72px rgba(28, 76, 112, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   padding: clamp(18px, 2.1vw, 30px);
 }
 
@@ -336,5 +328,360 @@
     border-radius: 12px;
     padding: 9px;
     background: rgba(255, 255, 255, 0.74);
+  }
+}
+
+/* ── Threat Summary Dashboard ───────────────────────────────────────────────── */
+
+.threatGrid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Score Hero ── */
+.scoreHero {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(28, 76, 112, 0.11);
+  box-shadow:
+    0 12px 42px rgba(28, 76, 112, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  overflow: hidden;
+}
+
+.gaugePane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 22px;
+  border-right: 1px solid rgba(28, 76, 112, 0.08);
+  gap: 10px;
+}
+
+.gaugeTopLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.gaugeSvg {
+  width: 214px;
+  height: 214px;
+}
+
+.riskCategoryBadge {
+  border-radius: 999px;
+  padding: 5px 16px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1.5px solid;
+}
+
+.infoPane {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.infoHeading {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.infoModelName {
+  font-family: var(--font-geist-mono);
+  font-size: 0.61rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Hero stat row */
+.heroStats {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(28, 76, 112, 0.09);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(28, 76, 112, 0.03);
+}
+
+.heroStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 3px;
+}
+
+.heroStatNum {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.heroStatLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.heroStatDivider {
+  width: 1px;
+  background: rgba(28, 76, 112, 0.09);
+  flex-shrink: 0;
+}
+
+/* Tier weight bars (inside hero) */
+.tierBars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tierBarRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tierBarMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.tierBarLabel {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.tierBarPts {
+  font-family: var(--font-geist-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.tierBarTrack {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.08);
+  overflow: hidden;
+}
+
+.tierBarFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── Tier Card Grid ── */
+.tierCardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tierCard {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(75, 123, 167, 0.13);
+  border-left-width: 3px;           /* color injected via inline borderLeftColor */
+  padding: clamp(14px, 1.8vw, 20px);
+  box-shadow: 0 4px 18px rgba(28, 76, 112, 0.06);
+}
+
+.tierCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.tierCardTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(0.9rem, 1.3vw, 1.06rem);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.tierWeightPill {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  border: 1.5px solid;
+}
+
+/* Trigger summary line above progress bar */
+.tierStatRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.tierStatLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.tierStatValue {
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.tierProgressTrack {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.07);
+  margin-bottom: 13px;
+  overflow: hidden;
+}
+
+.tierProgressFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── Signal list ── */
+.signalList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.signalRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.signalMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.signalIdRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Status dot */
+.signalDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.signalId {
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.signalIdMuted {
+  color: rgba(90, 107, 128, 0.45);
+}
+
+.signalWeightLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.62rem;
+  flex-shrink: 0;
+}
+
+.signalDescription {
+  margin: 0 0 0 14px;
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  line-height: 1.42;
+}
+
+.signalBarTrack {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.07);
+  overflow: hidden;
+  margin: 3px 0 0 14px;
+}
+
+.signalBarFill {
+  height: 100%;
+  border-radius: 999px;
+  opacity: 0.5;
+}
+
+/* Expand / collapse button */
+.expandButton {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(28, 76, 112, 0.08);
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  text-align: center;
+  opacity: 0.75;
+  transition: opacity 160ms ease;
+}
+
+.expandButton:hover {
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .scoreHero {
+    grid-template-columns: 1fr;
+  }
+
+  .gaugePane {
+    border-right: none;
+    border-bottom: 1px solid rgba(28, 76, 112, 0.08);
+    padding: 24px 20px 18px;
+  }
+
+  .tierCardGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -5,17 +5,17 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-// ─── Material palette (dark-tech override) ────────────────────────────────────
+// ─── Material palette (tech-simulation / holographic) ────────────────────────
 const MAT_MAP: Record<string, { color: string; emissive: string; emissiveIntensity: number; metalness: number; roughness: number; transparent?: boolean; opacity?: number }> = {
-  foundation_brown_brick: { color: "#1a2744", emissive: "#0d1a33", emissiveIntensity: 0.1, metalness: 0.2, roughness: 0.8 },
-  glass_window:           { color: "#3b82f6", emissive: "#1d4ed8", emissiveIntensity: 0.9, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.75 },
-  metal_dark_brown:       { color: "#0f172a", emissive: "#000000", emissiveIntensity: 0.0, metalness: 0.8, roughness: 0.3 },
-  metal_grey:             { color: "#1e293b", emissive: "#0f172a", emissiveIntensity: 0.05, metalness: 0.7, roughness: 0.4 },
-  plaster_light_brown:    { color: "#1e3a5f", emissive: "#0f2040", emissiveIntensity: 0.15, metalness: 0.1, roughness: 0.7 },
-  plaster_sand:           { color: "#1a3050", emissive: "#0d1a30", emissiveIntensity: 0.12, metalness: 0.1, roughness: 0.75 },
-  plate_grey:             { color: "#0f172a", emissive: "#000000", emissiveIntensity: 0.0, metalness: 0.6, roughness: 0.5 },
-  wood_balls_brown:       { color: "#10b981", emissive: "#059669", emissiveIntensity: 0.5, metalness: 0.3, roughness: 0.4 },
-  wood_brown:             { color: "#1e40af", emissive: "#1e3a8a", emissiveIntensity: 0.25, metalness: 0.2, roughness: 0.6 },
+  foundation_brown_brick: { color: "#0284C7", emissive: "#0EA5E9", emissiveIntensity: 1.4, metalness: 0.15, roughness: 0.20 },
+  glass_window:           { color: "#FED7AA", emissive: "#F97316", emissiveIntensity: 2.5, metalness: 0.00, roughness: 0.00, transparent: true, opacity: 0.88 },
+  metal_dark_brown:       { color: "#0C4A6E", emissive: "#0369A1", emissiveIntensity: 0.70, metalness: 0.75, roughness: 0.25 },
+  metal_grey:             { color: "#7DD3FC", emissive: "#38BDF8", emissiveIntensity: 0.65, metalness: 0.35, roughness: 0.28 },
+  plaster_light_brown:    { color: "#BAE6FD", emissive: "#7DD3FC", emissiveIntensity: 0.50, metalness: 0.00, roughness: 0.55 },
+  plaster_sand:           { color: "#E0F2FE", emissive: "#BAE6FD", emissiveIntensity: 0.40, metalness: 0.00, roughness: 0.60 },
+  plate_grey:             { color: "#075985", emissive: "#0284C7", emissiveIntensity: 0.80, metalness: 0.55, roughness: 0.30 },
+  wood_balls_brown:       { color: "#FDBA74", emissive: "#F97316", emissiveIntensity: 2.20, metalness: 0.05, roughness: 0.25 },
+  wood_brown:             { color: "#FB923C", emissive: "#EA580C", emissiveIntensity: 1.60, metalness: 0.08, roughness: 0.32 },
 };
 
 // ─── Real house loaded from GLB ───────────────────────────────────────────────
@@ -43,6 +43,35 @@ function HouseModel() {
     // Sit on ground plane
     box.setFromObject(clone);
     clone.position.y -= box.min.y;
+
+    // Remove driveway meshes entirely — detach from scene graph and free GPU resources.
+    // Run `npm run remove-driveway` to bake this into the GLB permanently.
+    const DRIVEWAY_KEYS = [
+      'drive', 'driveway', 'road', 'path', 'pavement',
+      'concrete', 'asphalt', 'curb', 'walkway', 'sidewalk',
+      'ground_path', 'terrain_path',
+      'terrace', // Cyprys House: front flat platform that reads as a driveway
+    ];
+    const toRemove: THREE.Object3D[] = [];
+    clone.traverse(child => {
+      const nodeName = child.name.toLowerCase();
+      const matName = child instanceof THREE.Mesh
+        ? (Array.isArray(child.material)
+            ? child.material.map(m => (m as THREE.Material).name?.toLowerCase() ?? '').join(' ')
+            : ((child.material as THREE.Material).name?.toLowerCase() ?? ''))
+        : '';
+      if (DRIVEWAY_KEYS.some(k => nodeName.includes(k) || matName.includes(k))) {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach(child => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry?.dispose();
+        (Array.isArray(child.material) ? child.material : [child.material])
+          .forEach((m: THREE.Material) => m.dispose());
+      }
+      child.parent?.remove(child);
+    });
 
     // Override materials
     clone.traverse(child => {
@@ -93,12 +122,12 @@ function AIShield({ hovered }: { hovered: boolean }) {
       <icosahedronGeometry args={[1, 1]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#3b82f6"
-        emissive="#3b82f6"
-        emissiveIntensity={0.6}
+        color="#0EA5E9"
+        emissive="#0EA5E9"
+        emissiveIntensity={1.2}
         wireframe
         transparent
-        opacity={0.09}
+        opacity={0.14}
       />
     </mesh>
   );
@@ -121,11 +150,11 @@ function PulseRing({ index }: { index: number }) {
       <ringGeometry args={[1.0, 1.06, 64]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#10b981"
-        emissive="#10b981"
-        emissiveIntensity={1.2}
+        color="#F97316"
+        emissive="#F97316"
+        emissiveIntensity={2.0}
         transparent
-        opacity={0.25}
+        opacity={0.35}
         side={THREE.DoubleSide}
       />
     </mesh>
@@ -217,8 +246,8 @@ function DataRing() {
           <mesh key={i} position={[Math.cos(a) * r, 0, Math.sin(a) * r]}>
             <sphereGeometry args={[0.02, 6, 6]} />
             <meshStandardMaterial
-              color={i % 5 === 0 ? "#10b981" : "#3b82f6"}
-              emissive={i % 5 === 0 ? "#10b981" : "#3b82f6"}
+              color={i % 5 === 0 ? "#F97316" : "#0EA5E9"}
+              emissive={i % 5 === 0 ? "#F97316" : "#0EA5E9"}
               emissiveIntensity={2.5}
             />
           </mesh>
@@ -259,8 +288,8 @@ function VerifyPulse({ angle, delay }: { angle: number; delay: number }) {
       <sphereGeometry args={[0.022, 6, 6]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#10b981" emissive="#10b981" emissiveIntensity={3}
-        transparent opacity={0.7}
+        color="#0EA5E9" emissive="#0EA5E9" emissiveIntensity={3}
+        transparent opacity={0.8}
       />
     </mesh>
   );
@@ -294,13 +323,18 @@ function Scene({ scrollY }: { scrollY: number }) {
 
   return (
     <>
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[4, 7, 4]} intensity={1.0} color="#ffffff" castShadow />
-      <directionalLight position={[-4, 2, -4]} intensity={0.35} color="#3b82f6" />
-      <pointLight position={[0, 5, 0]} color="#10b981" intensity={2} distance={9} />
-      <pointLight position={[2, 1, 3]} color="#1d4ed8" intensity={0.7} distance={6} />
+      {/* Bright ambient — holographic look needs strong fill */}
+      <ambientLight intensity={1.1} />
+      {/* Clean white sunlight */}
+      <directionalLight position={[4, 7, 4]} intensity={2.2} color="#FFFFFF" castShadow />
+      {/* Cool sky fill */}
+      <directionalLight position={[-4, 2, -4]} intensity={0.8} color="#ABD8F5" />
+      {/* Orange accent — makes wood/window parts blaze */}
+      <pointLight position={[2, 3, 2]} color="#F97316" intensity={2.0} distance={7} />
+      {/* Sky blue accent overhead */}
+      <pointLight position={[0, 5, 0]} color="#0EA5E9" intensity={1.0} distance={9} />
 
-      <fog attach="fog" args={["#050b18", 9, 22]} />
+      {/* No scene background or fog — CSS gradient shows through the alpha canvas */}
 
       <Float speed={1.0} rotationIntensity={0.1} floatIntensity={0.35}>
         <group
@@ -324,7 +358,7 @@ function Scene({ scrollY }: { scrollY: number }) {
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <circleGeometry args={[2.8, 64]} />
         <meshStandardMaterial
-          color="#1d4ed8" emissive="#1d4ed8" emissiveIntensity={0.12}
+          color="#BAE6FD" emissive="#7DD3FC" emissiveIntensity={0.5}
           transparent opacity={0.18}
         />
       </mesh>

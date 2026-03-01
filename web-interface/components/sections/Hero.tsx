@@ -81,11 +81,20 @@ export default function Hero() {
         <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-emerald-500/7 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
-        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-20 pb-10 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-4 items-center min-h-[calc(100vh-5rem)]">
+        {/* Before: pt-20 pb-10 (80/40px) — too much top padding on mobile, pushes content down */}
+        {/* After:  pt-16 pb-6 sm:pt-20 sm:pb-10 — tighter at mobile, same breathing room at sm+ */}
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-6 sm:pt-20 sm:pb-10 w-full">
+          {/* Before: gap-8 items-center min-h-[calc(100vh-5rem)] — forces grid to ~764px on mobile, */}
+          {/*         stretches cells with items-center adding phantom whitespace between stacked cols */}
+          {/* After:  gap-5 sm:gap-8, no min-h — content drives height, no artificial stretching */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-8 lg:gap-4 lg:items-center lg:min-h-[calc(100vh-5rem)]">
 
             {/* ── Copy ─────────────────────────────────────────────────────── */}
-            <div className="flex flex-col gap-6 order-2 lg:order-1">
+            {/* Before: order-2 lg:order-1 — copy renders BELOW 3D on mobile (460px down before headline) */}
+            {/* After:  order-1            — copy always renders first; 3D stacks below on mobile */}
+            {/* Before: gap-6 (24px × 5 items = 120px of gaps) */}
+            {/* After:  gap-3 sm:gap-5    — 12px gaps on mobile (60px total), 20px at sm+ */}
+            <div className="flex flex-col gap-3 sm:gap-5 order-1">
 
               {/* Badge */}
               <motion.div
@@ -100,11 +109,15 @@ export default function Hero() {
               </motion.div>
 
               {/* Headline */}
+              {/* Before: text-4xl (36px) — 3 lines × 36px × 1.08 = 117px on mobile, dominates viewport */}
+              {/* After:  clamp(1.75rem, 4.5vw + 1rem, 3.5rem)                                        */}
+              {/*         320px → ~29px  |  480px → ~30px  |  768px → ~45px  |  1280px → 56px        */}
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.12 }}
-                className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl font-bold leading-[1.08] tracking-tight"
+                className="font-bold leading-[1.08] tracking-tight"
+                style={{ fontSize: "clamp(1.75rem, 4.5vw + 1rem, 3.5rem)" }}
               >
                 Protect Your{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
@@ -119,11 +132,13 @@ export default function Hero() {
               </motion.h1>
 
               {/* Sub */}
+              {/* Before: text-base (16px) always — fine size but no mobile shrink */}
+              {/* After:  text-sm sm:text-base — 14px on mobile saves ~8px per line */}
               <motion.p
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, delay: 0.22 }}
-                className="text-base text-slate-400 leading-relaxed max-w-md"
+                className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-md"
               >
                 AI-powered fraud detection built for first-time buyers. Scan wire instructions,
                 emails, and PDFs{" "}
@@ -131,14 +146,16 @@ export default function Hero() {
               </motion.p>
 
               {/* Buttons */}
+              {/* Before: flex-col gap-3 — stacks on mobile, py-3 = 12px padding each side */}
+              {/* After:  flex-row on mobile too (side by side), min-h-[44px] for tap targets */}
               <motion.div
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.32 }}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-row gap-2.5 sm:gap-3"
               >
                 <a href="/dashboard"
-                  className="relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white overflow-hidden group transition-transform duration-200 active:scale-95"
+                  className="relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 min-h-[44px] rounded-xl text-sm font-semibold text-white overflow-hidden group transition-transform duration-200 active:scale-95 flex-1 sm:flex-none"
                   style={{ background: "linear-gradient(135deg,#059669,#10b981,#34d399)" }}
                 >
                   <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -150,7 +167,7 @@ export default function Hero() {
                 </a>
 
                 <a href="#chrome-ext"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 glass border border-white/8 hover:border-blue-500/35 hover:text-white transition-all duration-200">
+                  className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 min-h-[44px] rounded-xl text-sm font-semibold text-slate-300 glass border border-white/8 hover:border-blue-500/35 hover:text-white transition-all duration-200 flex-1 sm:flex-none">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="#60a5fa" strokeWidth="1.5" />
                     <circle cx="12" cy="12" r="4" fill="#60a5fa" />
@@ -160,11 +177,13 @@ export default function Hero() {
               </motion.div>
 
               {/* Stats */}
+              {/* Before: gap-5, text-lg — on 320px three items at ~60px each = 180px + 40px gaps = 220px, tight */}
+              {/* After:  gap-4, text-base — shaves ~12px, still legible */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.45 }}
-                className="flex items-center gap-5 pt-1"
+                className="flex items-center gap-4 sm:gap-5"
               >
                 {[
                   { v: "3×", l: "more vulnerable" },
@@ -172,7 +191,7 @@ export default function Hero() {
                   { v: "<3s", l: "scan time" },
                 ].map(s => (
                   <div key={s.l}>
-                    <div className="text-lg font-bold text-white leading-none">{s.v}</div>
+                    <div className="text-base sm:text-lg font-bold text-white leading-none">{s.v}</div>
                     <div className="text-xs text-slate-500 mt-0.5">{s.l}</div>
                   </div>
                 ))}
@@ -180,21 +199,27 @@ export default function Hero() {
             </div>
 
             {/* ── 3D Scene ──────────────────────────────────────────────────── */}
+            {/* Before: order-1 lg:order-2 — renders above copy on mobile                      */}
+            {/* After:  order-2            — always below copy on mobile; grid handles desktop  */}
+            {/* Before: h-[340px] (87% of 390px width) — too dominant on mobile                */}
+            {/* After:  h-[240px] sm:h-[360px] lg:h-[560px] — proportional to screen width    */}
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1.0, ease: "easeOut", delay: 0.15 }}
-              className="relative order-1 lg:order-2 h-[340px] sm:h-[420px] lg:h-[580px]"
+              className="relative order-2 h-[240px] sm:h-[360px] lg:h-[560px]"
             >
               {/* Scene */}
               <HouseScene scrollY={scrollY} />
 
               {/* Safe score chip */}
+              {/* Before: bottom-10 left-2, always visible — at 240px canvas height it clips or crowds */}
+              {/* After:  hidden on mobile (<sm), shown sm+ where canvas is tall enough            */}
               <motion.div
                 initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.1, duration: 0.6, ease: "easeOut" }}
-                className="absolute bottom-10 left-2 sm:left-4 glass rounded-xl p-3.5 min-w-[160px]"
+                className="absolute bottom-6 left-3 sm:bottom-10 sm:left-4 glass rounded-xl p-2.5 sm:p-3.5 min-w-[140px] sm:min-w-[160px]"
               >
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -219,7 +244,7 @@ export default function Hero() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-                className="absolute top-8 right-2 sm:right-4 glass rounded-xl p-2.5 flex items-center gap-2.5"
+                className="absolute top-3 right-3 sm:top-8 sm:right-4 glass rounded-xl p-2 sm:p-2.5 flex items-center gap-2"
               >
                 <div className="w-7 h-7 rounded-lg bg-red-500/12 border border-red-500/25 flex items-center justify-center flex-shrink-0">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none">

@@ -1,84 +1,73 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg: #050b18;
-  --emerald: #10b981;
-  --blue: #3b82f6;
-  --red: #ef4444;
+  --bg:           #F0F9FF;
+  --teal:         #0E7490;
+  --sky:          #0EA5E9;
+  --orange:       #F97316;
+  --white:        #FFFFFF;
+  --text:         #0C2340;
+  --slate:        #475569;
+  --red:          #ef4444;
+  --glass:        rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(14, 116, 144, 0.12);
 }
 
 @theme inline {
   --color-background: var(--bg);
-  --color-foreground: #f1f5f9;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-foreground: var(--text);
+  --font-sans:        var(--font-geist-sans);
+  --font-mono:        var(--font-geist-mono);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg);
-  color: #f1f5f9;
+  background: linear-gradient(135deg, #DBEAFE 0%, #F0F9FF 40%, #FFFFFF 65%, #FFF7ED 100%);
+  background-attachment: fixed;
+  color: var(--text);
   font-family: var(--font-geist-sans), -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 2px; }
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 2px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: rgba(14,116,144,0.3); border-radius: 1px; }
 
-/* Glass */
+/* ── Glass utility ─────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(255,255,255,0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.07);
+  background:               var(--glass);
+  backdrop-filter:          blur(20px);
+  -webkit-backdrop-filter:  blur(20px);
+  border:                   1px solid var(--glass-border);
 }
 
-/* Mesh gradient */
-.mesh-bg {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30,64,175,0.2) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 85% 50%, rgba(16,185,129,0.07) 0%, transparent 50%),
-    var(--bg);
+/* ── Pulse keyframe (nav status dot) ──────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%      { opacity: 0.4; transform: scale(0.8); }
 }
 
-/* Subtle grid */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-  background-size: 56px 56px;
-}
-
-/* Glow helpers */
-.glow-green { box-shadow: 0 0 24px rgba(16,185,129,0.35), 0 0 60px rgba(16,185,129,0.08); }
-.glow-blue  { box-shadow: 0 0 24px rgba(59,130,246,0.3); }
-
-/* Scan line */
+/* ── Scan line ─────────────────────────────────────────────────────────────── */
 @keyframes scan {
-  0%   { transform: translateY(-2px); }
+  0%   { transform: translateY(0); }
   100% { transform: translateY(100vh); }
 }
 .scan-line {
-  position: fixed; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent);
-  animation: scan 10s linear infinite;
-  pointer-events: none; z-index: 9999;
-}
-
-/* Float */
-@keyframes float {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-8px); }
-}
-.animate-float { animation: float 5s ease-in-out infinite; }
-
-/* Fade-up for sections */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  position:   fixed;
+  top:        0;
+  left:       0;
+  right:      0;
+  height:     1px;
+  background: linear-gradient(90deg, transparent, rgba(14, 116, 144, 0.2), transparent);
+  animation:  scan 20s linear infinite;
+  pointer-events: none;
+  z-index:    9999;
 }

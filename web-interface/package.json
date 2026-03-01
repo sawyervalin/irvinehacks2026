@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "remove-driveway": "node scripts/remove-driveway.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -19,6 +20,8 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -38,9 +38,6 @@ interface BackendTriggeredRule {
 }
 
 interface BackendRiskAssessment {
-  bucket_scores: Record<string, number>;
-  overall_risk_score: number;
-  risk_tier: string;
   triggered_rules: BackendTriggeredRule[];
 }
 
@@ -93,13 +90,6 @@ function fallbackLabel(key: string): string {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function humanizeRuleId(ruleId: string): string {
-  return ruleId
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 function toNumber(value: unknown, defaultValue = 0): number {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -137,15 +127,6 @@ function extractRiskAssessment(backendResponse: unknown): BackendRiskAssessment 
   const direct = backendResponse.risk_assessment;
   if (isObject(direct)) {
     return {
-      bucket_scores: isObject(direct.bucket_scores)
-        ? {
-            content: toNumber(direct.bucket_scores.content),
-            banking: toNumber(direct.bucket_scores.banking),
-            domain: toNumber(direct.bucket_scores.domain),
-          }
-        : { content: 0, banking: 0, domain: 0 },
-      overall_risk_score: toNumber(direct.overall_risk_score),
-      risk_tier: typeof direct.risk_tier === "string" ? direct.risk_tier : "low",
       triggered_rules: normalizeTriggeredRules(direct.triggered_rules),
     };
   }
@@ -164,80 +145,178 @@ function extractRiskAssessment(backendResponse: unknown): BackendRiskAssessment 
   }
 
   return {
-    bucket_scores: isObject(risk.bucket_scores)
-      ? {
-          content: toNumber(risk.bucket_scores.content),
-          banking: toNumber(risk.bucket_scores.banking),
-          domain: toNumber(risk.bucket_scores.domain),
-        }
-      : { content: 0, banking: 0, domain: 0 },
-    overall_risk_score: toNumber(risk.overall_risk_score),
-    risk_tier: typeof risk.risk_tier === "string" ? risk.risk_tier : "low",
     triggered_rules: normalizeTriggeredRules(risk.triggered_rules),
   };
 }
 
-function ruleToTierKey(bucket: string): string {
-  if (bucket === "banking") {
-    return "hard_evidence";
+const BASE_MODEL: Omit<ThreatModel, "score" | "risk_tier"> = {
+  model_name: "real_estate_wire_fraud_frontend_v1",
+  total_weight: 100,
+  tiers: {
+    hard_evidence: {
+      tier_weight: 60,
+      signals: [
+        {
+          id: "routing_number_mismatch",
+          description: "Routing number does not match stated bank or fails Federal Reserve verification",
+          weight: 30,
+        },
+        {
+          id: "known_scam_domain",
+          description: "Sender domain matches known scam database or confirmed spoof",
+          weight: 20,
+        },
+        {
+          id: "newly_created_domain",
+          description: "Domain age is recently created and used for financial instruction",
+          weight: 10,
+        },
+      ],
+    },
+    structural_inconsistencies: {
+      tier_weight: 22,
+      signals: [
+        {
+          id: "escrow_name_mismatch",
+          description: "Escrow officer name does not match user-provided or verified records",
+          weight: 10,
+        },
+        {
+          id: "foreign_banking_data",
+          description: "Foreign bank, routing, or phone numbers in domestic transaction",
+          weight: 7,
+        },
+        {
+          id: "suspicious_unicode_characters",
+          description: "Hidden or non-standard Unicode characters detected",
+          weight: 5,
+        },
+      ],
+    },
+    behavioral_linguistic: {
+      tier_weight: 13,
+      signals: [
+        {
+          id: "pressure_language",
+          description: "Urgency phrases such as 'wire immediately' or 'do not call to verify'",
+          weight: 6,
+        },
+        {
+          id: "ai_generated_text",
+          description: "Text exhibits strong indicators of AI generation",
+          weight: 4,
+        },
+        {
+          id: "grammatical_errors",
+          description: "Unusual grammatical patterns or structural writing issues",
+          weight: 2,
+        },
+        {
+          id: "misspellings",
+          description: "Spelling inconsistencies or errors in professional communication",
+          weight: 1,
+        },
+      ],
+    },
+    contextual_supporting: {
+      tier_weight: 5,
+      signals: [
+        {
+          id: "dummy_names",
+          description: "Use of known placeholder names such as John Doe",
+          weight: 2,
+        },
+        {
+          id: "no_online_presence",
+          description: "No verifiable online presence for sender or organization",
+          weight: 3,
+        },
+      ],
+    },
+  },
+};
+
+function createModelWithDefaults(): ThreatModel {
+  return {
+    model_name: BASE_MODEL.model_name,
+    total_weight: BASE_MODEL.total_weight,
+    score: 0,
+    risk_tier: "low",
+    tiers: {
+      hard_evidence: {
+        tier_weight: BASE_MODEL.tiers.hard_evidence.tier_weight,
+        signals: BASE_MODEL.tiers.hard_evidence.signals.map((s) => ({ ...s, triggered: false })),
+      },
+      structural_inconsistencies: {
+        tier_weight: BASE_MODEL.tiers.structural_inconsistencies.tier_weight,
+        signals: BASE_MODEL.tiers.structural_inconsistencies.signals.map((s) => ({ ...s, triggered: false })),
+      },
+      behavioral_linguistic: {
+        tier_weight: BASE_MODEL.tiers.behavioral_linguistic.tier_weight,
+        signals: BASE_MODEL.tiers.behavioral_linguistic.signals.map((s) => ({ ...s, triggered: false })),
+      },
+      contextual_supporting: {
+        tier_weight: BASE_MODEL.tiers.contextual_supporting.tier_weight,
+        signals: BASE_MODEL.tiers.contextual_supporting.signals.map((s) => ({ ...s, triggered: false })),
+      },
+    },
+  };
+}
+
+function toRuleSet(triggeredRules: BackendTriggeredRule[]): Set<string> {
+  return new Set(triggeredRules.map((rule) => rule.id));
+}
+
+function hasAnyRule(ruleSet: Set<string>, ids: string[]): boolean {
+  return ids.some((id) => ruleSet.has(id));
+}
+
+function scoreFromSignals(model: ThreatModel): number {
+  let score = 0;
+  for (const tier of Object.values(model.tiers)) {
+    for (const signal of tier.signals) {
+      if (signal.triggered) {
+        score += signal.weight;
+      }
+    }
   }
-  if (bucket === "domain") {
-    return "structural_inconsistencies";
-  }
-  if (bucket === "content") {
-    return "behavioral_linguistic";
-  }
-  return "contextual_supporting";
+  return Math.min(score, model.total_weight);
 }
 
 function buildThreatModel(assessment: BackendRiskAssessment): ThreatModel {
-  const tiers: Record<string, Tier> = {
-    hard_evidence: {
-      tier_weight: toNumber(assessment.bucket_scores.banking),
-      signals: [],
-    },
-    structural_inconsistencies: {
-      tier_weight: toNumber(assessment.bucket_scores.domain),
-      signals: [],
-    },
-    behavioral_linguistic: {
-      tier_weight: toNumber(assessment.bucket_scores.content),
-      signals: [],
-    },
-    contextual_supporting: {
-      tier_weight: 0,
-      signals: [],
-    },
-  };
+  const model = createModelWithDefaults();
+  const rules = toRuleSet(assessment.triggered_rules);
 
-  for (const rule of assessment.triggered_rules) {
-    const key = ruleToTierKey(rule.bucket);
-    tiers[key].signals.push({
-      id: rule.id,
-      description: humanizeRuleId(rule.id),
-      weight: rule.points,
-      triggered: true,
-    });
-  }
-
-  for (const [tierKey, tier] of Object.entries(tiers)) {
-    if (tier.signals.length === 0) {
-      tier.signals.push({
-        id: `no_${tierKey}_signals`,
-        description: "No high-confidence signals detected in this tier.",
-        weight: Math.max(tier.tier_weight, 1),
-        triggered: false,
-      });
+  const mark = (tierKey: keyof ThreatModel["tiers"], signalId: string, active: boolean) => {
+    const signal = model.tiers[tierKey].signals.find((entry) => entry.id === signalId);
+    if (signal) {
+      signal.triggered = active;
     }
-  }
-
-  return {
-    model_name: "wire_pdf_parser_v2",
-    total_weight: 100,
-    score: Math.max(0, Math.min(100, assessment.overall_risk_score)),
-    risk_tier: assessment.risk_tier.toLowerCase(),
-    tiers,
   };
+
+  mark("hard_evidence", "routing_number_mismatch", hasAnyRule(rules, ["BANKING_INVALID_ROUTING", "BANKING_NAME_MISMATCH"]));
+  mark("hard_evidence", "known_scam_domain", hasAnyRule(rules, ["DOMAIN_ON_SCAM_LIST", "DOMAIN_LOOKALIKE", "DOMAIN_NOT_EXIST"]));
+  mark("hard_evidence", "newly_created_domain", hasAnyRule(rules, ["DOMAIN_NEW_REGISTRATION"]));
+
+  mark("structural_inconsistencies", "escrow_name_mismatch", hasAnyRule(rules, ["BANKING_NAME_MISMATCH"]));
+  mark("structural_inconsistencies", "foreign_banking_data", hasAnyRule(rules, ["BANKING_FOREIGN_BANK"]));
+  mark("structural_inconsistencies", "suspicious_unicode_characters", hasAnyRule(rules, ["CONTENT_SUSPICIOUS_CHARS"]));
+
+  mark(
+    "behavioral_linguistic",
+    "pressure_language",
+    hasAnyRule(rules, ["CONTENT_PRESSURE_TO_WIRE", "CONTENT_DO_NOT_CALL_VERIFY", "CONTENT_RUSHED_CLOSING"])
+  );
+  mark("behavioral_linguistic", "ai_generated_text", false);
+  mark("behavioral_linguistic", "grammatical_errors", hasAnyRule(rules, ["CONTENT_GRAMMAR_ERRORS"]));
+  mark("behavioral_linguistic", "misspellings", hasAnyRule(rules, ["CONTENT_MISSPELLINGS"]));
+
+  mark("contextual_supporting", "dummy_names", hasAnyRule(rules, ["CONTENT_DUMMY_NAME"]));
+  mark("contextual_supporting", "no_online_presence", hasAnyRule(rules, ["DOMAIN_NO_MX", "DOMAIN_NOT_EXIST"]));
+
+  model.score = scoreFromSignals(model);
+  model.risk_tier = getRiskLevel(model.score).label.toLowerCase().replace(" ", "_");
+  return model;
 }
 
 interface RiskLevel {

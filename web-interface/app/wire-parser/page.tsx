@@ -4,21 +4,6 @@ import { useState, useRef } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ScalarField {
-  raw: string | number | null;
-  normalized: string | number | null;
-  confidence: number;
-  is_checksum_valid?: boolean;
-}
-
-interface ArrayField {
-  raw: string[];
-  normalized: string[];
-  confidence: number;
-}
-
-type AnyField = ScalarField | ArrayField;
-
 interface BankVerification {
   looked_up_bank: string | null;
   extracted_bank: string | null;
@@ -26,110 +11,17 @@ interface BankVerification {
   status: "found" | "not_found" | "invalid_format" | "skipped";
 }
 
-interface DomainVerification {
-  domain: string | null;
-  risk_score: number;
-  checks: Record<string, { risk_contribution: number; [key: string]: unknown }>;
-  llm_red_flags?: string[];
-  error?: string;
-}
-
 interface ParseResult {
   document_text_snippet?: string;
-  extracted_fields?: Record<string, AnyField>;
   llm_extracted?: Record<string, unknown>;
   hackathon_schema?: Record<string, unknown>;
   bank_name_verification?: BankVerification;
-  domain_verification?: DomainVerification;
   parsing_errors?: string[];
   version?: string;
   error?: string;
 }
 
-// ── Field display config ──────────────────────────────────────────────────────
-
-const FIELD_LABELS: Record<string, string> = {
-  document_type:       "Document Type",
-  title_company_name:  "Title Company",
-  escrow_officer_name: "Escrow Officer",
-  sender_email:        "Sender Email",
-  sender_domain:       "Sender Domain",
-  receiving_bank_name: "Receiving Bank",
-  routing_number:      "Routing Number",
-  account_number:      "Account Number",
-  wire_amount:         "Wire Amount",
-  phone_numbers:       "Phone Numbers",
-  property_address:    "Property Address",
-  closing_date:        "Closing Date",
-};
-
-const FIELD_ORDER = Object.keys(FIELD_LABELS);
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatNormalized(field: AnyField): string {
-  if ("normalized" in field && Array.isArray((field as ArrayField).normalized)) {
-    const arr = (field as ArrayField).normalized;
-    if (arr.length === 0) return "—";
-    return arr.join(", ");
-  }
-  const val = (field as ScalarField).normalized;
-  if (val === null || val === undefined) return "—";
-  if (typeof val === "number") return `$${val.toLocaleString()}`;
-  return String(val);
-}
-
-function riskColor(score: number): { bg: string; border: string; text: string; bar: string } {
-  if (score <= 30)  return { bg: "#f0fdf4", border: "#16a34a", text: "#15803d", bar: "#22c55e" };
-  if (score <= 60)  return { bg: "#fffbeb", border: "#d97706", text: "#92400e", bar: "#f59e0b" };
-  return              { bg: "#fef2f2", border: "#dc2626", text: "#b91c1c", bar: "#ef4444" };
-}
-
-function riskLabel(score: number): string {
-  if (score <= 30) return "Low Risk";
-  if (score <= 60) return "Medium Risk";
-  return "High Risk";
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function FieldRow({ label, field }: { label: string; field: AnyField }) {
-  const value = formatNormalized(field);
-  const isRouting = label === "Routing Number";
-  const checksumValid = isRouting && (field as ScalarField).is_checksum_valid;
-
-  if (value === "—") return null;
-
-  return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "180px 1fr",
-      alignItems: "start",
-      gap: "0.75rem",
-      padding: "0.65rem 0",
-      borderBottom: "1px solid #f1f5f9",
-    }}>
-      <span style={{ fontSize: "0.8rem", color: "#6b7280", fontWeight: 500 }}>{label}</span>
-      <span style={{
-        fontSize: "0.875rem", color: "#111827", fontWeight: 600,
-        wordBreak: "break-all", display: "flex", alignItems: "center",
-        gap: "0.5rem", flexWrap: "wrap",
-      }}>
-        {value}
-        {isRouting && (
-          <span style={{
-            fontSize: "0.7rem", fontWeight: 700, padding: "0.1rem 0.45rem",
-            borderRadius: "9999px",
-            background: checksumValid ? "#dcfce7" : "#fee2e2",
-            color: checksumValid ? "#15803d" : "#b91c1c",
-          }}>
-            {checksumValid ? "ABA ✓" : "ABA ✗"}
-          </span>
-        )}
-      </span>
-    </div>
-  );
-}
 
 function Spinner({ label }: { label?: string }) {
   return (
@@ -147,91 +39,39 @@ function Spinner({ label }: { label?: string }) {
   );
 }
 
-function RiskScoreCard({ dv }: { dv: DomainVerification }) {
-  const score = dv.risk_score ?? 0;
-  const c = riskColor(score);
-  const flags = dv.llm_red_flags ?? [];
-
+function JsonCollapsible({ label, data }: { label: string; data: unknown }) {
+  if (!data) return null;
   return (
-    <div style={{
-      background: "#fff", borderRadius: "16px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.07)", overflow: "hidden", marginBottom: "1rem",
+    <details style={{
+      background: "#fff", borderRadius: "12px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: "1rem",
     }}>
-      <div style={{
-        padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+      <summary style={{
+        padding: "0.875rem 1.25rem", cursor: "pointer",
+        fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
       }}>
-        <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#111827" }}>
-          Domain Risk Score
-        </span>
-        {dv.domain && (
-          <span style={{ fontSize: "0.75rem", color: "#6b7280", fontFamily: "ui-monospace, monospace" }}>
-            {dv.domain}
-          </span>
-        )}
-      </div>
-
-      <div style={{ padding: "1.25rem 1.5rem", background: c.bg, borderLeft: `4px solid ${c.border}` }}>
-        {/* Score + label */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "0.75rem" }}>
-          <span style={{ fontSize: "2.5rem", fontWeight: 800, color: c.text, lineHeight: 1 }}>
-            {score}
-          </span>
-          <span style={{ fontSize: "0.8rem", color: c.text, fontWeight: 600 }}>/ 100 — {riskLabel(score)}</span>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ height: "6px", background: "#e5e7eb", borderRadius: "9999px", marginBottom: "1rem" }}>
-          <div style={{
-            height: "100%", borderRadius: "9999px",
-            background: c.bar, width: `${Math.min(score, 100)}%`,
-            transition: "width 0.5s ease",
-          }} />
-        </div>
-
-        {/* Check breakdown */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: flags.length > 0 ? "0.75rem" : 0 }}>
-          {Object.entries(dv.checks ?? {}).map(([key, check]) => {
-            const pts = check.risk_contribution as number;
-            if (pts === 0) return null;
-            const label = key.replace(/_/g, " ");
-            return (
-              <span key={key} style={{
-                fontSize: "0.7rem", fontWeight: 600, padding: "0.15rem 0.5rem",
-                borderRadius: "9999px", background: "#fee2e2", color: "#b91c1c",
-              }}>
-                +{pts} {label}
-              </span>
-            );
-          })}
-        </div>
-
-        {/* LLM red flags */}
-        {flags.length > 0 && (
-          <div>
-            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: c.text, margin: "0 0 0.4rem" }}>
-              AI-detected red flags
-            </p>
-            <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
-              {flags.map((f, i) => (
-                <li key={i} style={{ fontSize: "0.8rem", color: "#374151", marginBottom: "0.2rem" }}>{f}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
+        {label}
+      </summary>
+      <pre style={{
+        margin: 0, padding: "1rem 1.25rem 1.25rem",
+        fontSize: "0.72rem", color: "#374151", background: "#f8fafc",
+        whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
+        fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
+      }}>
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </details>
   );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function WireParserPage() {
-  const [fileName, setFileName]   = useState("");
+  const [fileName, setFileName]     = useState("");
   const [manualText, setManualText] = useState("");
-  const [loading, setLoading]     = useState(false);
-  const [result, setResult]       = useState<ParseResult | null>(null);
-  const [apiError, setApiError]   = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [result, setResult]         = useState<ParseResult | null>(null);
+  const [apiError, setApiError]     = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function submit(body: FormData) {
@@ -278,9 +118,6 @@ export default function WireParserPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
-
-  const fields    = result?.extracted_fields ?? {};
-  const hasFields = FIELD_ORDER.some((k) => fields[k]);
 
   return (
     <main style={{
@@ -421,39 +258,6 @@ export default function WireParserPage() {
               </div>
             )}
 
-            {/* Risk score card */}
-            {result.domain_verification && result.domain_verification.domain && (
-              <RiskScoreCard dv={result.domain_verification} />
-            )}
-
-            {/* Extracted fields */}
-            {hasFields && (
-              <div style={{
-                background: "#fff", borderRadius: "16px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
-                overflow: "hidden", marginBottom: "1rem",
-              }}>
-                <div style={{
-                  padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#111827" }}>
-                    Extracted Fields
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
-                    {fileName || "pasted text"}
-                  </span>
-                </div>
-                <div style={{ padding: "0.25rem 1.5rem 0.75rem" }}>
-                  {FIELD_ORDER.map((key) => {
-                    const field = fields[key];
-                    if (!field) return null;
-                    return <FieldRow key={key} label={FIELD_LABELS[key]} field={field} />;
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Bank name verification */}
             {result.bank_name_verification &&
               result.bank_name_verification.status !== "skipped" && (() => {
@@ -561,7 +365,6 @@ export default function WireParserPage() {
 
                   {/* Score + buckets */}
                   <div style={{ padding: "1.25rem 1.5rem", background: pal.bg }}>
-                    {/* Overall score */}
                     <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "1.25rem" }}>
                       <span style={{ fontSize: "3rem", fontWeight: 800, color: pal.text, lineHeight: 1 }}>
                         {ra.overall_risk_score}
@@ -569,7 +372,6 @@ export default function WireParserPage() {
                       <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>/ 100 overall score</span>
                     </div>
 
-                    {/* Bucket bars */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                       {(["content", "banking", "domain"] as const).map((b) => {
                         const score = ra.bucket_scores[b];
@@ -659,28 +461,17 @@ export default function WireParserPage() {
               );
             })()}
 
-            {/* Extracted sections JSON */}
-            {(result.hackathon_schema?.extraction ?? result.llm_extracted) && (
-              <details style={{
-                background: "#fff", borderRadius: "12px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: "1rem",
-              }}>
-                <summary style={{
-                  padding: "0.875rem 1.25rem", cursor: "pointer",
-                  fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
-                }}>
-                  Extracted Sections JSON
-                </summary>
-                <pre style={{
-                  margin: 0, padding: "1rem 1.25rem 1.25rem",
-                  fontSize: "0.72rem", color: "#374151", background: "#f8fafc",
-                  whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
-                  fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
-                }}>
-                  {JSON.stringify(result.hackathon_schema?.extraction ?? result.llm_extracted, null, 2)}
-                </pre>
-              </details>
-            )}
+            {/* Risk Assessment JSON */}
+            <JsonCollapsible
+              label="Risk Assessment JSON"
+              data={(result.hackathon_schema as Record<string, unknown> | undefined)?.risk_assessment}
+            />
+
+            {/* Extracted Sections JSON */}
+            <JsonCollapsible
+              label="Extracted Sections JSON"
+              data={(result.hackathon_schema as Record<string, unknown> | undefined)?.extraction ?? result.llm_extracted}
+            />
 
             {/* Document text snippet */}
             {result.document_text_snippet && (

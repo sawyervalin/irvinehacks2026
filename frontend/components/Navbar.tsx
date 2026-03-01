@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface NavbarProps {
   /** When true: background/border overlay fades in after 25% scroll (landing page).
@@ -43,8 +44,9 @@ export default function Navbar({ scrollReveal = false }: NavbarProps) {
         }}
       />
 
-      {/* Logo — always visible */}
-      <span
+      {/* Logo — always visible, links to landing page */}
+      <Link
+        href="/"
         style={{
           position: "relative",
           fontFamily: "var(--font-mono)",
@@ -52,10 +54,11 @@ export default function Navbar({ scrollReveal = false }: NavbarProps) {
           letterSpacing: "0.22em",
           color: "rgba(26,37,64,1)",
           textTransform: "uppercase",
+          textDecoration: "none",
         }}
       >
         Constryke
-      </span>
+      </Link>
 
       {/* Badge — always visible */}
       <div className="flex items-center gap-2" style={{ position: "relative" }}>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "../page.module.css";
 import DashboardShell from "../components/DashboardShell";
+import { setCachedThreatResult, type StoredThreatResult } from "../../lib/threatResultCache";
 
 interface LatestIngestResponse {
     ok: boolean;
@@ -152,8 +153,9 @@ export default function HomePage() {
                     method: "GET",
                     cache: "no-store"
                 });
-                const data = (await response.json()) as { hasData?: boolean };
+                const data = (await response.json()) as { hasData?: boolean; result?: StoredThreatResult | null };
                 if (Boolean(data?.hasData)) {
+                    setCachedThreatResult(data.result ?? null);
                     return true;
                 }
             } catch {

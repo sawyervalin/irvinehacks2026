@@ -145,6 +145,7 @@ def process_data(data: Any = Body(...)) -> dict[str, Any]:
     if used_sender_address:
         input_summary["used_sender_address"] = used_sender_address
 
+    print("returing")
     return {"status": "ok", "input_summary": input_summary, "result": result}
 
 
@@ -171,6 +172,7 @@ async def process_pdf(file: UploadFile = File(...)) -> dict[str, Any]:
         if temp_pdf_path and os.path.exists(temp_pdf_path):
             os.remove(temp_pdf_path)
 
+    print("returing")
     return {
         "status": "ok",
         "filename": filename,

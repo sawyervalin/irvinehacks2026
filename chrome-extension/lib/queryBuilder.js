@@ -1,7 +1,7 @@
 const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIMPLE_DOMAIN_REGEX = /^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 20;
+const DEFAULT_LIMIT = 5;
+const MAX_LIMIT = 5;
 
 export function validateEmail(email) {
   return SIMPLE_EMAIL_REGEX.test(email);

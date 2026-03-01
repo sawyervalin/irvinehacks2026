@@ -1,6 +1,9 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
-bin/
-include/
-lib/
-pyvenv.cfgs
-.env
+Include/
+Lib/
+Scripts/
+.env/
+*.env
+__pycache__/
+*.pyc
+pyvenv.cfg

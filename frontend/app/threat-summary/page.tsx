@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardShell from "../components/DashboardShell";
 import styles from "../page.module.css";
+import { getCachedThreatResult, setCachedThreatResult } from "../../lib/threatResultCache";
 
 interface Signal {
   id: string;
@@ -569,6 +570,7 @@ export default function ThreatSummaryPage() {
       await fetch("/api/gmail-ingest/latest-result", {
         method: "DELETE",
       });
+      setCachedThreatResult(null);
       setData(null);
       setStatus("Threat summary cleared.");
     } catch {
@@ -582,6 +584,17 @@ export default function ThreatSummaryPage() {
     let active = true;
 
     async function loadThreatData() {
+      // Use the client-side cache populated by threat-check to avoid a redundant fetch.
+      const cached = getCachedThreatResult();
+      if (cached) {
+        const assessment = extractRiskAssessment(cached.backendResponse);
+        if (assessment) {
+          setData(buildThreatModel(assessment));
+          setStatus(`Loaded backend analysis from ${new Date(cached.receivedAt).toLocaleString()}.`);
+          return;
+        }
+      }
+
       try {
         const response = await fetch(`/api/gmail-ingest/latest-result?t=${Date.now()}`, {
           method: "GET",

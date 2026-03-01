@@ -10,7 +10,7 @@ interface DashboardShellProps {
   title: string;
   subtitle?: string;
   statusText?: string;
-  primaryLabel: string;
+  primaryLabel?: string;
   onPrimaryAction?: () => void;
   primaryDisabled?: boolean;
 }
@@ -27,57 +27,70 @@ export default function DashboardShell({
   const pathname = usePathname();
   const isAddData = pathname === "/";
   const isThreatSummary = pathname.startsWith("/threat-summary");
+  const currentStep = isThreatSummary ? 2 : 1;
 
   return (
     <main className={styles.pageShell}>
       <div className={styles.appFrame}>
-        <aside className={styles.sidebar}>
-          <div className={styles.logo}>LOGO PLACEHOLDER</div>
-          <div className={styles.menuLabel}>MENU</div>
-          <nav className={styles.nav}>
+        <section className={styles.contentPane}>
+          <header className={styles.topBar}>
+            <div className={styles.logo}>ShieldScope</div>
+            <div className={styles.topLinks}>
+              <span className={styles.topLink}>Realtime Monitor</span>
+              <span className={styles.topLink}>Risk Engine</span>
+              <span className={styles.topLink}>Audit Trail</span>
+            </div>
+          </header>
+
+          <div className={styles.headerRow}>
+            <h1 className={styles.title}>{title}</h1>
+            {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
+          </div>
+
+          <nav className={styles.timeline} aria-label="Workflow steps">
             <Link
               href="/"
-              className={`${styles.navLink} ${isAddData ? styles.navItemActive : ""}`}
+              className={styles.timelineStep}
+              aria-current={isAddData ? "step" : undefined}
             >
-              <span className={`${styles.navIcon} ${styles.navIconGrid}`} aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
+              <span
+                className={`${styles.timelineDot} ${currentStep >= 1 ? styles.timelineDotDone : ""}`}
+                aria-hidden="true"
+              >
+                {currentStep > 1 ? "✓" : "1"}
               </span>
-              <span className={styles.navLabel}>Add Data</span>
+              <span className={styles.timelineLabel}>Add Data</span>
             </Link>
+            <span className={styles.timelineRail} aria-hidden="true" />
             <Link
               href="/threat-summary"
-              className={`${styles.navLink} ${isThreatSummary ? styles.navItemActive : ""}`}
+              className={styles.timelineStep}
+              aria-current={isThreatSummary ? "step" : undefined}
             >
-              <span className={`${styles.navIcon} ${styles.navIconShield}`} aria-hidden="true">
-                <span />
+              <span
+                className={`${styles.timelineDot} ${currentStep >= 2 ? styles.timelineDotDone : ""}`}
+                aria-hidden="true"
+              >
+                2
               </span>
-              <span className={styles.navLabel}>Threat summary</span>
+              <span className={styles.timelineLabel}>Threat Summary</span>
             </Link>
           </nav>
-        </aside>
-
-        <section className={styles.contentPane}>
-          <div className={styles.headerRow}>
-            <div>
-              <h1 className={styles.title}>{title}</h1>
-              {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
-            </div>
-            <button
-              type="button"
-              className={styles.ctaButton}
-              onClick={onPrimaryAction}
-              disabled={primaryDisabled || !onPrimaryAction}
-            >
-              {primaryLabel}
-            </button>
-          </div>
 
           {statusText ? <p className={styles.statusText}>{statusText}</p> : null}
 
           {children}
+
+          {onPrimaryAction && primaryLabel ? (
+            <button
+              type="button"
+              className={styles.ctaButton}
+              onClick={onPrimaryAction}
+              disabled={primaryDisabled}
+            >
+              {primaryLabel}
+            </button>
+          ) : null}
         </section>
       </div>
     </main>

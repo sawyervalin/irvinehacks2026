@@ -168,8 +168,8 @@ export default function HomePage() {
 
   return (
     <DashboardShell
-      title="Import your Property Wire data"
-      subtitle="Plan, prioritize, and accomplish your tasks with ease."
+      title="Create Your Threat Check"
+      subtitle="Fill out the form below to process Gmail, manual payloads, and PDF files."
       statusText={status === "No ingestions yet." ? undefined : status}
       primaryLabel={isChecking ? "Checking..." : "Check for threats!"}
       onPrimaryAction={() => {
@@ -178,8 +178,8 @@ export default function HomePage() {
       primaryDisabled={isChecking}
     >
       <div className={styles.grid}>
-        <article className={`${styles.card} ${styles.chromeCard}`}>
-          <h2 className={styles.chromeCardTitle}>From Chrome Extension</h2>
+        <article className={styles.formCard}>
+          <h2 className={styles.cardTitle}>From Chrome Extension</h2>
           <div className={styles.infoBox}>
             <p className={styles.infoPrimary}>{ingestText}</p>
             <p className={styles.infoSecondary}>{ingestTime}</p>
@@ -194,8 +194,9 @@ export default function HomePage() {
           </button>
         </article>
 
-        <article className={styles.card}>
+        <article className={styles.formCard}>
           <h2 className={styles.cardTitle}>Manual Data entry</h2>
+          <label className={styles.fieldLabel}>Paste email data</label>
           <textarea
             value={manualData}
             onChange={(event) => setManualData(event.target.value)}
@@ -203,22 +204,20 @@ export default function HomePage() {
             rows={8}
             className={styles.textArea}
           />
-          <div className={styles.manualFieldRow}>
-            <label htmlFor="senderAddress" className={styles.manualFieldLabel}>
-              Email sender address: *
-            </label>
-            <input
-              id="senderAddress"
-              type="email"
-              value={senderAddress}
-              onChange={(event) => setSenderAddress(event.target.value)}
-              placeholder="sender@example.com"
-              className={styles.manualFieldInput}
-            />
-          </div>
+          <label htmlFor="senderAddress" className={styles.fieldLabel}>
+            Email sender address *
+          </label>
+          <input
+            id="senderAddress"
+            type="email"
+            value={senderAddress}
+            onChange={(event) => setSenderAddress(event.target.value)}
+            placeholder="sender@example.com"
+            className={styles.manualFieldInput}
+          />
         </article>
 
-        <article className={styles.card}>
+        <article className={styles.formCard}>
           <h2 className={styles.cardTitle}>Upload PDF</h2>
           <input
             ref={pdfInputRef}
@@ -233,6 +232,7 @@ export default function HomePage() {
             }}
             className={styles.hiddenFileInput}
           />
+          <label className={styles.fieldLabel}>Selected file</label>
           <div className={styles.fileInput}>
             {selectedPdf ? selectedPdf.name : "No file chosen"}
           </div>

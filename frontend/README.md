@@ -22,7 +22,8 @@ Create `frontend/.env.local` with:
 
 ```bash
 EXTENSION_API_KEY=dev-extension-key-change-me
-DUMMY_BACKEND_URL=http://localhost:8000/dummy
+DUMMY_BACKEND_URL=http://localhost:8000/process
+DUMMY_PDF_BACKEND_URL=http://localhost:8000/process-pdf
 ```
 
 The Chrome extension must send the same API key in `x-extension-api-key`.

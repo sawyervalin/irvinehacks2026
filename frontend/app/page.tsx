@@ -13,8 +13,12 @@ interface LatestIngestResponse {
 export default function HomePage() {
   const [status, setStatus] = useState("Loading latest ingestion...");
   const [latest, setLatest] = useState<LatestIngestResponse | null>(null);
+  const [manualData, setManualData] = useState("");
+  const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isManualProcessing, setIsManualProcessing] = useState(false);
+  const [isPdfProcessing, setIsPdfProcessing] = useState(false);
 
   const fetchLatest = useCallback(async () => {
     setIsRefreshing(true);
@@ -38,10 +42,21 @@ export default function HomePage() {
     }
   }, []);
 
-  const handleProcess = async () => {
-    setIsProcessing(true);
+  const handleProcess = async (overridePayload?: Record<string, unknown>) => {
+    if (overridePayload) {
+      setIsManualProcessing(true);
+    } else {
+      setIsProcessing(true);
+    }
+
     try {
-      const response = await fetch("/api/gmail-ingest/process", { method: "POST" });
+      const response = await fetch("/api/gmail-ingest/process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(overridePayload ? { payload: overridePayload } : {})
+      });
       const data = (await response.json()) as { ok?: boolean; code?: string };
       if (!response.ok && data.code === "NO_DATA") {
         setStatus("No ingested data to process yet.");
@@ -52,7 +67,55 @@ export default function HomePage() {
       // Silent failure by design for backend processing in this prototype.
       setStatus("Process request sent.");
     } finally {
-      setIsProcessing(false);
+      if (overridePayload) {
+        setIsManualProcessing(false);
+      } else {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  const handleManualProcess = async () => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(manualData);
+    } catch {
+      setStatus("Manual data must be valid JSON.");
+      return;
+    }
+
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      setStatus("Manual data must be a JSON object.");
+      return;
+    }
+
+    await handleProcess(parsed as Record<string, unknown>);
+  };
+
+  const handlePdfProcess = async () => {
+    if (!selectedPdf) {
+      setStatus("Choose a PDF file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedPdf);
+
+    setIsPdfProcessing(true);
+    try {
+      const response = await fetch("/api/gmail-ingest/process-pdf", {
+        method: "POST",
+        body: formData
+      });
+      if (!response.ok) {
+        setStatus("Failed to submit PDF.");
+      } else {
+        setStatus("PDF process request sent.");
+      }
+    } catch {
+      setStatus("PDF process request sent.");
+    } finally {
+      setIsPdfProcessing(false);
     }
   };
 
@@ -156,6 +219,89 @@ export default function HomePage() {
             }}
           >
             {isProcessing ? "Processing..." : "Process"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: "18px",
+            paddingTop: "16px",
+            borderTop: "1px solid #e2e8f0"
+          }}
+        >
+          <p style={{ margin: "0 0 8px", color: "#0f172a", fontWeight: 600 }}>
+            Manual Email Data (JSON)
+          </p>
+          <textarea
+            value={manualData}
+            onChange={(event) => setManualData(event.target.value)}
+            placeholder='Paste JSON email data here, e.g. {"messages":[...]}'
+            rows={7}
+            style={{
+              width: "100%",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e1",
+              padding: "10px",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+              fontSize: "0.85rem",
+              boxSizing: "border-box",
+              marginBottom: "10px"
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => void handleManualProcess()}
+            disabled={isManualProcessing}
+            style={{
+              border: 0,
+              borderRadius: "8px",
+              padding: "10px 14px",
+              background: "#7c3aed",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: isManualProcessing ? "not-allowed" : "pointer",
+              opacity: isManualProcessing ? 0.7 : 1
+            }}
+          >
+            {isManualProcessing ? "Processing Manual Data..." : "Process Manual Data"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: "18px",
+            paddingTop: "16px",
+            borderTop: "1px solid #e2e8f0"
+          }}
+        >
+          <p style={{ margin: "0 0 8px", color: "#0f172a", fontWeight: 600 }}>
+            PDF Upload
+          </p>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(event) => {
+              const nextFile = event.target.files?.[0] ?? null;
+              setSelectedPdf(nextFile);
+            }}
+            style={{ marginBottom: "10px", display: "block" }}
+          />
+          <button
+            type="button"
+            onClick={() => void handlePdfProcess()}
+            disabled={isPdfProcessing}
+            style={{
+              border: 0,
+              borderRadius: "8px",
+              padding: "10px 14px",
+              background: "#b45309",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: isPdfProcessing ? "not-allowed" : "pointer",
+              opacity: isPdfProcessing ? 0.7 : 1
+            }}
+          >
+            {isPdfProcessing ? "Processing PDF..." : "Process PDF"}
           </button>
         </div>
       </section>

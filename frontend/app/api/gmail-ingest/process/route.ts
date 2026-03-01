@@ -3,38 +3,60 @@ import { getLatestBatch } from "../../../../lib/gmailIngestStore";
 
 export const runtime = "nodejs";
 
-export async function POST() {
-  const latest = getLatestBatch();
+function isObject(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
-  if (!latest) {
-    return NextResponse.json(
-      {
-        ok: false,
-        code: "NO_DATA",
-        message: "No ingested Gmail data available to process."
-      },
-      { status: 400 }
-    );
-  }
+export async function POST(request: Request) {
+    let overridePayload: Record<string, unknown> | null = null;
 
-  const dummyBackendUrl = process.env.DUMMY_BACKEND_URL || "http://localhost:8000/dummy";
-  try {
-    await fetch(dummyBackendUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        batchId: latest.batchId,
-        payload: latest.payload
-      })
+    try {
+        const body = (await request.json()) as unknown;
+        if (isObject(body) && isObject(body.payload)) {
+            overridePayload = body.payload;
+        }
+    } catch {
+        // Empty/non-JSON body is valid; fallback to latest ingested batch.
+    }
+
+    const latest = getLatestBatch();
+
+    if (!overridePayload && !latest) {
+        return NextResponse.json(
+            {
+                ok: false,
+                code: "NO_DATA",
+                message: "No ingested Gmail data available to process."
+            },
+            { status: 400 }
+        );
+    }
+
+    const requestBody = overridePayload
+        ? {
+              batchId: `manual-${Date.now()}`,
+              payload: overridePayload
+          }
+        : {
+              batchId: latest!.batchId,
+              payload: latest!.payload
+          };
+
+    const dummyBackendUrl = process.env.DUMMY_BACKEND_URL || "http://localhost:8000/process";
+    try {
+        await fetch(dummyBackendUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        });
+    } catch {
+        // Fail silently by design in this prototype.
+    }
+
+    return NextResponse.json({
+        ok: true,
+        attempted: true
     });
-  } catch {
-    // Fail silently by design in this prototype.
-  }
-
-  return NextResponse.json({
-    ok: true,
-    attempted: true
-  });
 }

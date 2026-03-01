@@ -670,6 +670,37 @@
   opacity: 1;
 }
 
+.summaryActions {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.summaryClearButton {
+  border: 1px solid rgba(28, 76, 112, 0.24);
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-width: 160px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+.summaryClearButton:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(28, 76, 112, 0.42);
+}
+
+.summaryClearButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 720px) {
   .scoreHero {
     grid-template-columns: 1fr;

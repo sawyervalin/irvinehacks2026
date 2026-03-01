@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "../page.module.css";
 import DashboardShell from "../components/DashboardShell";
 
@@ -13,6 +14,7 @@ interface LatestIngestResponse {
 }
 
 export default function HomePage() {
+    const router = useRouter();
     const [status, setStatus] = useState("Loading latest ingestion...");
     const [latest, setLatest] = useState<LatestIngestResponse | null>(null);
     const [manualData, setManualData] = useState("");
@@ -21,6 +23,25 @@ export default function HomePage() {
     const pdfInputRef = useRef<HTMLInputElement | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
+
+    const waitForThreatSummaryData = useCallback(async (): Promise<boolean> => {
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+            try {
+                const response = await fetch(`/api/gmail-ingest/latest-result?t=${Date.now()}`, {
+                    method: "GET",
+                    cache: "no-store"
+                });
+                const data = (await response.json()) as { hasData?: boolean };
+                if (Boolean(data?.hasData)) {
+                    return true;
+                }
+            } catch {
+                // Keep polling.
+            }
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        return false;
+    }, []);
 
     const fetchLatest = useCallback(async () => {
         setIsRefreshing(true);
@@ -148,6 +169,14 @@ export default function HomePage() {
                 setStatus(`Threat checks completed: ${successCount} succeeded, ${failureCount} failed.`);
             } else {
                 setStatus(`Threat checks completed: ${successCount} succeeded.`);
+            }
+
+            if (successCount > 0) {
+                const summaryReady = await waitForThreatSummaryData();
+                if (summaryReady) {
+                    setStatus("Threat checks completed. Redirecting to threat summary...");
+                    router.push("/threat-summary");
+                }
             }
         } finally {
             setIsChecking(false);

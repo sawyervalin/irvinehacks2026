@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLatestThreatResult } from "../../../../lib/threatResultStore";
+import { clearLatestThreatResult, getLatestThreatResult } from "../../../../lib/threatResultStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +29,17 @@ export async function GET() {
       ok: true,
       hasData: true,
       result: latest
+    },
+    { headers: noStoreHeaders() }
+  );
+}
+
+export async function DELETE() {
+  clearLatestThreatResult();
+  return NextResponse.json(
+    {
+      ok: true,
+      cleared: true
     },
     { headers: noStoreHeaders() }
   );

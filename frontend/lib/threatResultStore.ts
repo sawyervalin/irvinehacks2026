@@ -30,3 +30,7 @@ export function setLatestThreatResult(result: StoredThreatResult): void {
 export function getLatestThreatResult(): StoredThreatResult | null {
   return getStoreSlot().value;
 }
+
+export function clearLatestThreatResult(): void {
+  getStoreSlot().value = null;
+}

@@ -546,6 +546,22 @@ function TierCard({
 export default function ThreatSummaryPage() {
   const [data, setData] = useState<ThreatModel | null>(null);
   const [status, setStatus] = useState("Loading latest backend analysis...");
+  const [isClearing, setIsClearing] = useState(false);
+
+  const clearSummary = async () => {
+    setIsClearing(true);
+    try {
+      await fetch("/api/gmail-ingest/latest-result", {
+        method: "DELETE",
+      });
+      setData(null);
+      setStatus("Threat summary cleared.");
+    } catch {
+      setStatus("Failed to clear threat summary.");
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -680,6 +696,18 @@ export default function ThreatSummaryPage() {
           {tierEntries.map(([key, tier]) => (
             <TierCard key={key} tierKey={key} tier={tier} />
           ))}
+        </div>
+        <div className={styles.summaryActions}>
+          <button
+            type="button"
+            className={styles.summaryClearButton}
+            onClick={() => {
+              void clearSummary();
+            }}
+            disabled={isClearing}
+          >
+            {isClearing ? "Clearing..." : "Clear Summary"}
+          </button>
         </div>
       </div>
     </DashboardShell>

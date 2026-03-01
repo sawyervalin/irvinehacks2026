@@ -324,6 +324,11 @@ def _map_to_hackathon_schema(
     routing_raw  = wire_out["routing_number"]
     routing_valid: bool | None = aba_checksum_valid(routing_raw) if routing_raw else None
 
+    # ABA checksum alone is insufficient: a syntactically valid routing number
+    # that cannot be found in any bank database is fake and must be flagged.
+    if routing_valid is True and bank_verif.get("status") == "not_found":
+        routing_valid = False
+
     fed_bank_name   = bank_verif.get("looked_up_bank")
     match_flag      = bank_verif.get("match")
     bank_mismatch: bool | None = (not match_flag) if match_flag is not None else None

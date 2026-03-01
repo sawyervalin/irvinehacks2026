@@ -625,8 +625,8 @@ export default function WireParserPage() {
               );
             })()}
 
-            {/* Hackathon AI Extraction schema (wire-doc.hack.v1) */}
-            {(result.hackathon_schema ?? result.llm_extracted) && (
+            {/* Extracted sections JSON */}
+            {(result.hackathon_schema?.extraction ?? result.llm_extracted) && (
               <details style={{
                 background: "#fff", borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: "1rem",
@@ -635,7 +635,7 @@ export default function WireParserPage() {
                   padding: "0.875rem 1.25rem", cursor: "pointer",
                   fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
                 }}>
-                  {result.hackathon_schema ? "AI Extraction JSON (wire-doc.hack.v1)" : "Raw extracted JSON"}
+                  Extracted Sections JSON
                 </summary>
                 <pre style={{
                   margin: 0, padding: "1rem 1.25rem 1.25rem",
@@ -643,7 +643,7 @@ export default function WireParserPage() {
                   whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
                   fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
                 }}>
-                  {JSON.stringify(result.hackathon_schema ?? result.llm_extracted, null, 2)}
+                  {JSON.stringify(result.hackathon_schema?.extraction ?? result.llm_extracted, null, 2)}
                 </pre>
               </details>
             )}

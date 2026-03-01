@@ -19,7 +19,7 @@ export default function FinalPanel() {
         transition={{ delay: 0.1, duration: 0.6 }}
         style={{
           height: 1,
-          background: "rgba(30,144,255,0.18)",
+          background: "rgba(28,76,112,0.15)",
           margin: "0 auto 48px",
         }}
       />
@@ -34,7 +34,7 @@ export default function FinalPanel() {
           fontWeight: 300,
           letterSpacing: "-0.025em",
           lineHeight: 1.05,
-          color: "#E8EDF2",
+          color: "#1A2540",
           marginBottom: 20,
         }}
       >
@@ -49,7 +49,7 @@ export default function FinalPanel() {
         style={{
           fontSize: "17px",
           fontWeight: 400,
-          color: "#7A8FA6",
+          color: "#5A6B80",
           marginBottom: 48,
           letterSpacing: "-0.01em",
         }}
@@ -66,8 +66,8 @@ export default function FinalPanel() {
         <button
           style={{
             padding: "16px 36px",
-            background: "#1E90FF",
-            color: "#050A12",
+            background: "#1C4C70",
+            color: "#FFFFFF",
             fontSize: "13px",
             fontWeight: 600,
             letterSpacing: "0.02em",
@@ -77,13 +77,13 @@ export default function FinalPanel() {
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#4DB8FF";
+            b.style.background = "#4B7BA7";
             b.style.transform = "scale(1.02)";
-            b.style.boxShadow = "0 8px 28px rgba(30,144,255,0.4)";
+            b.style.boxShadow = "0 8px 28px rgba(28,76,112,0.25)";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#1E90FF";
+            b.style.background = "#1C4C70";
             b.style.transform = "scale(1)";
             b.style.boxShadow = "none";
           }}
@@ -102,7 +102,7 @@ export default function FinalPanel() {
           fontFamily: "var(--font-geist-mono)",
           fontSize: "9px",
           letterSpacing: "0.3em",
-          color: "rgba(122,143,166,0.30)",
+          color: "rgba(90,107,128,0.30)",
           textTransform: "uppercase",
         }}
       >

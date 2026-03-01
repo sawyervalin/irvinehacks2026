@@ -23,11 +23,11 @@ export default function HowPanel() {
           padding: "44px 48px",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          background: "rgba(5, 15, 30, 0.88)",
-          border: "1px solid rgba(30,144,255,0.12)",
+          background: "rgba(248, 249, 251, 0.92)",
+          border: "1px solid rgba(28,76,112,0.10)",
           position: "relative",
           overflow: "hidden",
-          boxShadow: "0 2px 40px rgba(0,0,0,0.4)",
+          boxShadow: "0 2px 40px rgba(0,0,0,0.06)",
         }}
       >
         {/* Soft blue glow — bottom left */}
@@ -38,7 +38,7 @@ export default function HowPanel() {
             left: -50,
             width: 180,
             height: 180,
-            background: "rgba(30,144,255,0.06)",
+            background: "rgba(28,76,112,0.04)",
             borderRadius: "50%",
             filter: "blur(40px)",
             pointerEvents: "none",
@@ -50,10 +50,10 @@ export default function HowPanel() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "9px",
             letterSpacing: "0.28em",
-            color: "#1E90FF",
+            color: "#1C4C70",
             textTransform: "uppercase",
             marginBottom: 40,
-            opacity: 0.75,
+            opacity: 0.80,
           }}
         >
           How it works
@@ -73,7 +73,7 @@ export default function HowPanel() {
                 style={{
                   fontFamily: "var(--font-geist-mono)",
                   fontSize: "10px",
-                  color: "rgba(30,144,255,0.38)",
+                  color: "rgba(28,76,112,0.35)",
                   marginTop: 4,
                   userSelect: "none",
                   flexShrink: 0,
@@ -87,7 +87,7 @@ export default function HowPanel() {
                     fontSize: "clamp(20px, 2.8vw, 26px)",
                     fontWeight: 300,
                     letterSpacing: "-0.02em",
-                    color: "#E8EDF2",
+                    color: "#1A2540",
                     lineHeight: 1,
                     marginBottom: 6,
                   }}
@@ -98,7 +98,7 @@ export default function HowPanel() {
                   style={{
                     fontSize: "11px",
                     fontWeight: 400,
-                    color: "#7A8FA6",
+                    color: "#5A6B80",
                     letterSpacing: "0em",
                   }}
                 >
@@ -113,7 +113,7 @@ export default function HowPanel() {
           style={{
             marginTop: 44,
             paddingTop: 32,
-            borderTop: "1px solid rgba(30,144,255,0.08)",
+            borderTop: "1px solid rgba(28,76,112,0.08)",
           }}
         >
           <div
@@ -121,7 +121,7 @@ export default function HowPanel() {
               fontFamily: "var(--font-geist-mono)",
               fontSize: "9px",
               letterSpacing: "0.26em",
-              color: "#7A8FA6",
+              color: "#5A6B80",
               textTransform: "uppercase",
               marginBottom: 14,
             }}
@@ -130,13 +130,13 @@ export default function HowPanel() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(30,144,255,0.1)", overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(28,76,112,0.1)", overflow: "hidden" }}>
               <motion.div
                 initial={{ width: "0%" }}
                 whileInView={{ width: "28%" }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.9, duration: 1.4, ease: "easeOut" }}
-                style={{ height: "100%", background: "#50FA7B" }}
+                style={{ height: "100%", background: "#7AA85C" }}
               />
             </div>
             <span
@@ -144,7 +144,7 @@ export default function HowPanel() {
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "9px",
                 letterSpacing: "0.2em",
-                color: "#50FA7B",
+                color: "#7AA85C",
                 opacity: 0.8,
               }}
             >

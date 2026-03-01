@@ -55,19 +55,39 @@ function HouseModel() {
       child.parent?.remove(child);
     });
 
-    // Override all materials → wireframe hologram
-    const wireframeMat = new THREE.MeshStandardMaterial({
-      color: "#1E90FF",
-      emissive: "#0055CC",
-      emissiveIntensity: 1.4,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.38,
-    });
+    // Material name → solid architectural color
+    // Keys match the GLB's embedded material names exactly.
+    // Each mesh gets its own material instance (not shared) so colors are independent.
+    const MAT_PALETTE: Record<string, { color: string; roughness: number }> = {
+      foundation_brown_brick: { color: "#1C4C70", roughness: 0.62 }, // dark navy  — base/foundation
+      glass_window:           { color: "#9BA8BB", roughness: 0.28 }, // neutral gray — window panes
+      metal_dark_brown:       { color: "#1C4C70", roughness: 0.55 }, // dark navy  — dark metal
+      metal_grey:             { color: "#9BA8BB", roughness: 0.50 }, // neutral gray — metal trim
+      plaster_light_brown:    { color: "#E8EEF5", roughness: 0.65 }, // off white  — walls
+      plaster_sand:           { color: "#E8EEF5", roughness: 0.68 }, // off white  — walls
+      plate_grey:             { color: "#9BA8BB", roughness: 0.48 }, // neutral gray — plates
+      wood_balls_brown:       { color: "#4B7BA7", roughness: 0.60 }, // soft green  — decorative
+      wood_brown:             { color: "#4B7BA7", roughness: 0.62 }, // steel blue  — secondary wood
+    };
+    const FALLBACK = { color: "#9BA8BB", roughness: 0.55 };
 
     clone.traverse(child => {
       if (!(child instanceof THREE.Mesh)) return;
-      child.material = wireframeMat;
+
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      const newMats = mats.map(mat => {
+        const name = (mat as THREE.Material).name ?? "";
+        const def = MAT_PALETTE[name] ?? FALLBACK;
+        return new THREE.MeshStandardMaterial({
+          color: def.color,
+          roughness: def.roughness,
+          metalness: 0.05,
+          wireframe: false,
+          transparent: false,
+        });
+      });
+
+      child.material = newMats.length === 1 ? newMats[0] : newMats;
       child.castShadow = false;
       child.receiveShadow = false;
     });
@@ -89,13 +109,13 @@ function AIShield({ hovered }: { hovered: boolean }) {
     ref.current.rotation.x = Math.sin(t.current * 0.2) * 0.04;
   });
 
-  const opacity = hovered ? 0.10 : 0.05;
+  const opacity = hovered ? 0.08 : 0.04;
 
   return (
     <mesh ref={ref} scale={[1.55, 1.82, 1.55]} position={[0, 0.55, 0]}>
       <icosahedronGeometry args={[1, 1]} />
       <meshBasicMaterial
-        color="#1E90FF"
+        color="#4B7BA7"
         wireframe
         transparent
         opacity={opacity}
@@ -113,7 +133,7 @@ function PulseRing({ index }: { index: number }) {
   useFrame(({ clock }) => {
     const t = ((clock.getElapsedTime() * 0.38 + offset) % 2) / 2;
     ref.current.scale.setScalar(1.5 + t * 1.4);
-    matRef.current.opacity = (1 - t) * 0.18;
+    matRef.current.opacity = (1 - t) * 0.10;
   });
 
   return (
@@ -121,11 +141,11 @@ function PulseRing({ index }: { index: number }) {
       <ringGeometry args={[1.0, 1.05, 64]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#1E90FF"
-        emissive="#1E90FF"
-        emissiveIntensity={0.8}
+        color="#4B7BA7"
+        emissive="#3A6B97"
+        emissiveIntensity={0.3}
         transparent
-        opacity={0.15}
+        opacity={0.08}
         side={THREE.DoubleSide}
       />
     </mesh>
@@ -179,9 +199,9 @@ function ThreatArrow({ startPos, targetPos, onDone }: {
       <mesh position={[0, 0.11, 0]}>
         <coneGeometry args={[0.026, 0.085, 6]} />
         <meshStandardMaterial
-          color="#ef4444"
-          emissive="#ff1a1a"
-          emissiveIntensity={5}
+          color="#C75555"
+          emissive="#8B4444"
+          emissiveIntensity={2}
           transparent
           opacity={1}
         />
@@ -190,9 +210,9 @@ function ThreatArrow({ startPos, targetPos, onDone }: {
       <mesh position={[0, -0.04, 0]}>
         <cylinderGeometry args={[0.007, 0.007, 0.16, 6]} />
         <meshStandardMaterial
-          color="#ef4444"
-          emissive="#cc0000"
-          emissiveIntensity={3}
+          color="#C75555"
+          emissive="#8B4444"
+          emissiveIntensity={1.5}
           transparent
           opacity={0.80}
         />
@@ -251,9 +271,9 @@ function DataRing() {
           <mesh key={i} position={[Math.cos(a) * r, 0, Math.sin(a) * r]}>
             <sphereGeometry args={[0.018, 6, 6]} />
             <meshStandardMaterial
-              color={i % 5 === 0 ? "#50FA7B" : "#1E90FF"}
-              emissive={i % 5 === 0 ? "#20C050" : "#1E90FF"}
-              emissiveIntensity={3}
+              color={i % 5 === 0 ? "#7AA85C" : "#4B7BA7"}
+              emissive={i % 5 === 0 ? "#5A8C44" : "#3A6B97"}
+              emissiveIntensity={1.2}
             />
           </mesh>
         );
@@ -284,7 +304,7 @@ function VerifyPulse({ angle, delay }: { angle: number; delay: number }) {
     const t = ((clock.getElapsedTime() * 0.35 + delay) % 3) / 3;
     const r = 1.4 + t * 2.2;
     ref.current.position.set(Math.cos(angle) * r, 0.5, Math.sin(angle) * r);
-    matRef.current.opacity = (1 - t) * 0.6;
+    matRef.current.opacity = (1 - t) * 0.35;
     ref.current.scale.setScalar(1 + t * 0.5);
   });
 
@@ -293,11 +313,11 @@ function VerifyPulse({ angle, delay }: { angle: number; delay: number }) {
       <sphereGeometry args={[0.020, 6, 6]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#50FA7B"
-        emissive="#50FA7B"
-        emissiveIntensity={1.2}
+        color="#7AA85C"
+        emissive="#5A8C44"
+        emissiveIntensity={0.8}
         transparent
-        opacity={0.5}
+        opacity={0.3}
       />
     </mesh>
   );
@@ -312,7 +332,7 @@ function HouseFallback() {
   return (
     <mesh ref={ref} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 0.8, 1]} />
-      <meshStandardMaterial color="#1E90FF" emissive="#0055CC" emissiveIntensity={1.0} wireframe />
+      <meshStandardMaterial color="#A8B5C8" emissive="#000000" emissiveIntensity={0} roughness={0.55} />
     </mesh>
   );
 }
@@ -346,29 +366,32 @@ function Scene({ scrollY }: { scrollY: number }) {
 
   return (
     <>
-      {/* Dark cyber lighting */}
-      <ambientLight intensity={0.15} color="#0A1525" />
-      <pointLight position={[0, 4, 0]} color="#1E90FF" intensity={1.8} distance={8} />
-      <pointLight position={[3, 2, 3]} color="#4DB8FF" intensity={0.6} distance={6} />
-      <pointLight position={[-3, 1, -3]} color="#0040AA" intensity={0.4} distance={5} />
+      {/* Light mode lighting */}
+      <ambientLight intensity={0.45} color="#E8E9EB" />
+      <pointLight position={[0, 4, 0]} color="#4B7BA7" intensity={0.9} distance={8} />
+      <pointLight position={[3, 2, 3]} color="#6B8FC4" intensity={0.4} distance={6} />
+      <pointLight position={[-3, 1, -3]} color="#A8B5C8" intensity={0.25} distance={5} />
 
-      <Float speed={1.0} rotationIntensity={0.08} floatIntensity={0.30}>
-        <group
-          ref={groupRef}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-        >
-          <Suspense fallback={<HouseFallback />}>
-            <HouseModel />
-          </Suspense>
-          <AIShield hovered={hovered} />
-          <Threats />
-          <VerifyPulses />
-        </group>
-      </Float>
+      {/* Outer group applies uniform 5% scale to the entire simulation */}
+      <group scale={[0.95, 0.95, 0.95]}>
+        <Float speed={1.0} rotationIntensity={0.08} floatIntensity={0.30}>
+          <group
+            ref={groupRef}
+            onPointerOver={() => setHovered(true)}
+            onPointerOut={() => setHovered(false)}
+          >
+            <Suspense fallback={<HouseFallback />}>
+              <HouseModel />
+            </Suspense>
+            <AIShield hovered={hovered} />
+            <Threats />
+            <VerifyPulses />
+          </group>
+        </Float>
 
-      {[0, 1, 2].map(i => <PulseRing key={i} index={i} />)}
-      <DataRing />
+        {[0, 1, 2].map(i => <PulseRing key={i} index={i} />)}
+        <DataRing />
+      </group>
     </>
   );
 }

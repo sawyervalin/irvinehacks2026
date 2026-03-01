@@ -2,16 +2,17 @@
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:           #050A12;            /* deep dark */
-  --surface:      #0A1525;            /* dark surface */
-  --sand:         #0D1A2A;            /* dark tint */
-  --text:         #E8EDF2;            /* near-white */
-  --text-muted:   #7A8FA6;            /* muted blue-gray */
-  --accent:       #1E90FF;            /* electric blue */
-  --accent-light: #4DB8FF;            /* lighter accent */
-  --red:          #ef4444;
-  --glass:        rgba(5, 15, 30, 0.88);
-  --glass-border: rgba(30, 144, 255, 0.12);
+  --bg:           #F8F9FB;            /* white background */
+  --surface:      #F0F2F7;            /* light surface */
+  --sand:         #E8ECEF;            /* soft light gray */
+  --text:         #1A2540;            /* dark navy primary */
+  --text-muted:   #5A6B80;            /* medium-dark gray body */
+  --accent:       #1C4C70;            /* dark blue primary */
+  --accent-light: #4B7BA7;            /* light blue secondary */
+  --accent-green: #7AA85C;            /* soft light green */
+  --red:          #C75555;            /* muted red */
+  --glass:        rgba(248, 249, 251, 0.92);
+  --glass-border: rgba(28, 76, 112, 0.08);
 }
 
 @theme inline {
@@ -27,7 +28,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: #050A12;
+  background: #F8F9FB;
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-geist-sans), -apple-system, sans-serif;
@@ -40,7 +41,7 @@ body {
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar          { width: 2px; }
 ::-webkit-scrollbar-track    { background: transparent; }
-::-webkit-scrollbar-thumb    { background: rgba(30, 144, 255, 0.25); border-radius: 1px; }
+::-webkit-scrollbar-thumb    { background: rgba(75, 123, 167, 0.22); border-radius: 1px; }
 
 /* ── Glass utility ─────────────────────────────────────────────────────────── */
 .glass {
@@ -67,7 +68,7 @@ body {
   left:       0;
   right:      0;
   height:     1px;
-  background: linear-gradient(90deg, transparent, rgba(30, 144, 255, 0.22), transparent);
+  background: linear-gradient(90deg, transparent, rgba(75, 123, 167, 0.12), transparent);
   animation:  scan 24s linear infinite;
   pointer-events: none;
   z-index:    9999;

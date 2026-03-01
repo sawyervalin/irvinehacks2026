@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { useRef, useEffect } from "react";
 import HeroPanel from "./HeroPanel";
 import ThreatPanel from "./ThreatPanel";
 import HowPanel from "./HowPanel";
@@ -10,43 +10,62 @@ import FinalPanel from "./FinalPanel";
 const HouseScene = dynamic(() => import("@/components/HouseScene"), { ssr: false });
 
 export default function SpatialPage() {
-  const { scrollYProgress } = useScroll();
-  const canvasY = useTransform(scrollYProgress, [0, 1], ["0%", "-6%"]);
-  const canvasOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const maxScroll = document.body.scrollHeight - window.innerHeight;
+      if (maxScroll <= 0) return;
+
+      const scrollProgress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+      const opacity = 1 - scrollProgress;
+
+      if (canvasRef.current) {
+        canvasRef.current.style.opacity = String(opacity);
+        // Parallax: translate canvas up slightly as scroll progresses
+        canvasRef.current.style.transform = `translateY(${scrollProgress * -6}%)`;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // apply initial state on mount
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <div className="relative">
 
-      {/* ── Dark cyber background ── */}
+      {/* ── Light background ── */}
       <div
         className="fixed inset-0"
         style={{
           zIndex: 0,
-          background: "linear-gradient(135deg, #030810 0%, #050A12 55%, #060C18 100%)",
+          background: "linear-gradient(135deg, #F0F2F7 0%, #F8F9FB 55%, #EBF0F5 100%)",
         }}
       />
 
-      {/* ── Thin electric grid ── */}
+      {/* ── Subtle grid ── */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           zIndex: 1,
           backgroundImage: `
-            linear-gradient(rgba(30, 144, 255, 0.055) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(30, 144, 255, 0.055) 1px, transparent 1px)
+            linear-gradient(rgba(75, 123, 167, 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(75, 123, 167, 0.035) 1px, transparent 1px)
           `,
           backgroundSize: "80px 80px",
           backgroundPosition: "40px 40px",
         }}
       />
 
-      {/* ── 3D House Canvas — fades on scroll ── */}
-      <motion.div
+      {/* ── 3D House Canvas — opacity + parallax via direct scroll listener ── */}
+      <div
+        ref={canvasRef}
         className="fixed inset-0"
-        style={{ zIndex: 2, y: canvasY, opacity: canvasOpacity }}
+        style={{ zIndex: 2, willChange: "opacity, transform" }}
       >
         <HouseScene />
-      </motion.div>
+      </div>
 
       {/* ── Cinematic scan line ── */}
       <div className="scan-line" />
@@ -61,7 +80,7 @@ export default function SpatialPage() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "11px",
             letterSpacing: "0.22em",
-            color: "rgba(232,237,242,0.38)",
+            color: "rgba(26,37,64,0.60)",
             textTransform: "uppercase",
           }}
         >
@@ -74,8 +93,8 @@ export default function SpatialPage() {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#1E90FF",
-              boxShadow: "0 0 8px rgba(30,144,255,0.55)",
+              background: "#1C4C70",
+              boxShadow: "0 0 8px rgba(28,76,112,0.30)",
               animation: "pulse 2s ease-in-out infinite",
             }}
           />
@@ -84,7 +103,7 @@ export default function SpatialPage() {
               fontFamily: "var(--font-geist-mono)",
               fontSize: "10px",
               letterSpacing: "0.2em",
-              color: "rgba(30,144,255,0.65)",
+              color: "rgba(28,76,112,0.70)",
             }}
           >
             PROTECTED

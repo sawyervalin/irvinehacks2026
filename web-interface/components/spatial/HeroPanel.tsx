@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function HeroPanel() {
   return (
-    <div className="pointer-events-auto" style={{ maxWidth: 560, position: "relative" }}>
+    <div className="pointer-events-auto" style={{ maxWidth: 560, position: "relative", paddingRight: "clamp(16px, 4vw, 48px)" }}>
 
       {/* Badge */}
       <motion.div
@@ -19,8 +19,8 @@ export default function HeroPanel() {
             width: 5,
             height: 5,
             borderRadius: "50%",
-            background: "#1E90FF",
-            boxShadow: "0 0 8px rgba(30,144,255,0.6)",
+            background: "#1C4C70",
+            boxShadow: "0 0 8px rgba(28,76,112,0.4)",
           }}
         />
         <span
@@ -28,9 +28,9 @@ export default function HeroPanel() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "10px",
             letterSpacing: "0.26em",
-            color: "#1E90FF",
+            color: "#1C4C70",
             textTransform: "uppercase",
-            opacity: 0.85,
+            opacity: 0.90,
           }}
         >
           AI Fraud Detection
@@ -47,12 +47,12 @@ export default function HeroPanel() {
           fontWeight: 300,
           letterSpacing: "-0.025em",
           lineHeight: 0.94,
-          color: "#E8EDF2",
+          color: "#1A2540",
           marginBottom: 28,
         }}
       >
         Protect<br />
-        <span style={{ color: "#1E90FF" }}>the Wire.</span>
+        <span style={{ color: "#1C4C70" }}>the Wire.</span>
       </motion.h1>
 
       {/* Subtext */}
@@ -63,7 +63,7 @@ export default function HeroPanel() {
         style={{
           fontSize: "17px",
           fontWeight: 400,
-          color: "#7A8FA6",
+          color: "#5A6B80",
           letterSpacing: "-0.01em",
           marginBottom: 52,
         }}
@@ -81,8 +81,8 @@ export default function HeroPanel() {
         <button
           style={{
             padding: "14px 28px",
-            background: "#1E90FF",
-            color: "#050A12",
+            background: "#1C4C70",
+            color: "#FFFFFF",
             fontSize: "13px",
             fontWeight: 600,
             letterSpacing: "0.02em",
@@ -92,13 +92,13 @@ export default function HeroPanel() {
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#4DB8FF";
+            b.style.background = "#4B7BA7";
             b.style.transform = "scale(1.02)";
-            b.style.boxShadow = "0 4px 20px rgba(30,144,255,0.45)";
+            b.style.boxShadow = "0 4px 20px rgba(28,76,112,0.30)";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#1E90FF";
+            b.style.background = "#1C4C70";
             b.style.transform = "scale(1)";
             b.style.boxShadow = "none";
           }}
@@ -110,23 +110,23 @@ export default function HeroPanel() {
           style={{
             padding: "14px 28px",
             background: "transparent",
-            color: "#7A8FA6",
+            color: "#5A6B80",
             fontSize: "13px",
             fontWeight: 400,
             letterSpacing: "0.02em",
-            border: "1px solid rgba(30,144,255,0.22)",
+            border: "1px solid rgba(28,76,112,0.20)",
             cursor: "pointer",
             transition: "all 0.25s ease",
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.borderColor = "rgba(30,144,255,0.55)";
-            b.style.color = "#E8EDF2";
+            b.style.borderColor = "rgba(28,76,112,0.40)";
+            b.style.color = "#1A2540";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.borderColor = "rgba(30,144,255,0.22)";
-            b.style.color = "#7A8FA6";
+            b.style.borderColor = "rgba(28,76,112,0.20)";
+            b.style.color = "#5A6B80";
           }}
         >
           Install Extension

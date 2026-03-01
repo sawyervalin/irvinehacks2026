@@ -299,6 +299,32 @@ function ThreatArrow({
   );
 }
 
+// ─── Shield glow halo — additive blending bloom approximation ────────────────
+function ShieldGlow() {
+  const meshRef = useRef<THREE.Mesh>(null!);
+  const t = useRef(0);
+
+  useFrame((_, delta) => {
+    t.current += delta;
+    meshRef.current.rotation.y -= delta * 0.05;
+    meshRef.current.rotation.z = Math.sin(t.current * 0.12) * 0.025;
+  });
+
+  return (
+    <mesh ref={meshRef} scale={[1.72, 2.02, 1.72]} position={[0, 0.55, 0]}>
+      <icosahedronGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        color="#4B7BA7"
+        transparent
+        opacity={0.036}
+        blending={THREE.AdditiveBlending}
+        side={THREE.BackSide}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
 // ─── Threat spawner ───────────────────────────────────────────────────────────
 function Threats({ onImpact }: { onImpact: () => void }) {
   const [list, setList] = useState<{
@@ -455,11 +481,16 @@ function Scene({ scrollY }: { scrollY: number }) {
 
   return (
     <>
+      {/* Fog — light, adds depth without darkening */}
+      <fog attach="fog" args={["#f0f4fa", 12, 22]} />
+
       {/* Light mode lighting */}
       <ambientLight intensity={0.45} color="#E8E9EB" />
       <pointLight position={[0, 4, 0]} color="#4B7BA7" intensity={0.9} distance={8} />
       <pointLight position={[3, 2, 3]} color="#6B8FC4" intensity={0.4} distance={6} />
       <pointLight position={[-3, 1, -3]} color="#A8B5C8" intensity={0.25} distance={5} />
+      {/* Rim backlight — creates Fresnel-style edge highlight on house + shield */}
+      <directionalLight position={[-1.5, 1.5, -5]} color="#7BA8C8" intensity={0.38} />
 
       {/* Outer group: 5% scale reduction + X offset to clear hero text */}
       <group scale={[0.95, 0.95, 0.95]} position={[0.55, -0.5, 0]}>
@@ -473,6 +504,7 @@ function Scene({ scrollY }: { scrollY: number }) {
               <HouseModel />
             </Suspense>
             <AIShield hovered={hovered} impactTimeRef={impactTimeRef} />
+            <ShieldGlow />
             <Threats onImpact={handleImpact} />
             <VerifyPulses />
           </group>

@@ -61,6 +61,15 @@ body {
   50%      { opacity: 0.4; transform: scale(0.8); }
 }
 
+/* ── Carousel card hover ────────────────────────────────────────────────────── */
+.carousel-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.carousel-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 64px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.90) !important;
+}
+
 /* ── Scan line ─────────────────────────────────────────────────────────────── */
 @keyframes scan {
   0%   { transform: translateY(0); }

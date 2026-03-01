@@ -3,9 +3,10 @@
 import dynamic from "next/dynamic";
 import { useRef, useEffect } from "react";
 import HeroPanel from "./HeroPanel";
-import ThreatPanel from "./ThreatPanel";
-import HowPanel from "./HowPanel";
 import FinalPanel from "./FinalPanel";
+import BootOverlay from "./BootOverlay";
+import DataField from "./DataField";
+import PanelCarousel from "./PanelCarousel";
 
 const HouseScene = dynamic(() => import("@/components/HouseScene"), { ssr: false });
 
@@ -13,27 +14,35 @@ export default function SpatialPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const FADE_END = 0.45; // house fully gone by 45% scroll progress
+
     const onScroll = () => {
       const maxScroll = document.body.scrollHeight - window.innerHeight;
       if (maxScroll <= 0) return;
 
       const scrollProgress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
-      const opacity = 1 - scrollProgress;
+
+      const houseOpacity = Math.max(0, 1 - scrollProgress / FADE_END);
 
       if (canvasRef.current) {
-        canvasRef.current.style.opacity = String(opacity);
-        // Parallax: translate canvas up slightly as scroll progresses
+        canvasRef.current.style.opacity = String(houseOpacity);
         canvasRef.current.style.transform = `translateY(${scrollProgress * -6}%)`;
       }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll(); // apply initial state on mount
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div className="relative">
+
+      {/* ── Boot animation — renders once on load ── */}
+      <BootOverlay />
+
+      {/* ── Persistent orbital data field / download counter ── */}
+      <DataField />
 
       {/* ── Light background ── */}
       <div
@@ -126,29 +135,16 @@ export default function SpatialPage() {
           <HeroPanel />
         </section>
 
-        {/* 2 — THREAT */}
+        {/* 2 — 3D PANEL CAROUSEL */}
         <section
           style={{
-            minHeight: "68vh",
+            minHeight: "88vh",
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
-            padding: "0 clamp(32px, 8vw, 128px)",
+            justifyContent: "center",
           }}
         >
-          <ThreatPanel />
-        </section>
-
-        {/* 3 — HOW IT WORKS */}
-        <section
-          style={{
-            minHeight: "68vh",
-            display: "flex",
-            alignItems: "center",
-            padding: "0 clamp(32px, 8vw, 128px)",
-          }}
-        >
-          <HowPanel />
+          <PanelCarousel />
         </section>
 
         {/* 4 — FINAL CTA */}

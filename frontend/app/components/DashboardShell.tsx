@@ -7,6 +7,8 @@ import styles from "../page.module.css";
 
 interface DashboardShellProps {
   children: ReactNode;
+  title: string;
+  subtitle?: string;
   statusText?: string;
   primaryLabel: string;
   onPrimaryAction?: () => void;
@@ -15,6 +17,8 @@ interface DashboardShellProps {
 
 export default function DashboardShell({
   children,
+  title,
+  subtitle,
   statusText,
   primaryLabel,
   onPrimaryAction,
@@ -58,10 +62,8 @@ export default function DashboardShell({
         <section className={styles.contentPane}>
           <div className={styles.headerRow}>
             <div>
-              <h1 className={styles.title}>Import your Property Wire data</h1>
-              <p className={styles.subtitle}>
-                Plan, prioritize, and accomplish your tasks with ease.
-              </p>
+              <h1 className={styles.title}>{title}</h1>
+              {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
             </div>
             <button
               type="button"

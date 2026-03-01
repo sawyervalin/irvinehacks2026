@@ -5,7 +5,11 @@ import DashboardShell from "../components/DashboardShell";
 
 export default function ThreatSummaryPage() {
   return (
-    <DashboardShell primaryLabel="Check for threats!">
+    <DashboardShell
+      title="Threat Summary"
+      subtitle="Overview of risk checks and detected issues."
+      primaryLabel="Check for threats!"
+    >
       <div className={styles.emptyCanvas} />
     </DashboardShell>
   );

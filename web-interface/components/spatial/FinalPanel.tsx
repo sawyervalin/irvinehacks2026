@@ -19,8 +19,8 @@ export default function FinalPanel() {
         transition={{ delay: 0.1, duration: 0.6 }}
         style={{
           height: 1,
-          background: "rgba(78,127,164,0.18)",
-          margin: "0 auto 56px",
+          background: "rgba(30,144,255,0.18)",
+          margin: "0 auto 48px",
         }}
       />
 
@@ -34,7 +34,7 @@ export default function FinalPanel() {
           fontWeight: 300,
           letterSpacing: "-0.025em",
           lineHeight: 1.05,
-          color: "#1A1A1A",
+          color: "#E8EDF2",
           marginBottom: 20,
         }}
       >
@@ -47,10 +47,10 @@ export default function FinalPanel() {
         viewport={{ once: true }}
         transition={{ delay: 0.5, duration: 0.9 }}
         style={{
-          fontSize: "18px",
+          fontSize: "17px",
           fontWeight: 400,
-          color: "#5C606B",
-          marginBottom: 56,
+          color: "#7A8FA6",
+          marginBottom: 48,
           letterSpacing: "-0.01em",
         }}
       >
@@ -66,10 +66,10 @@ export default function FinalPanel() {
         <button
           style={{
             padding: "16px 36px",
-            background: "#4E7FA4",
-            color: "#FFFFFF",
+            background: "#1E90FF",
+            color: "#050A12",
             fontSize: "13px",
-            fontWeight: 500,
+            fontWeight: 600,
             letterSpacing: "0.02em",
             border: "none",
             cursor: "pointer",
@@ -77,13 +77,13 @@ export default function FinalPanel() {
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#3D6E93";
+            b.style.background = "#4DB8FF";
             b.style.transform = "scale(1.02)";
-            b.style.boxShadow = "0 8px 28px rgba(78,127,164,0.35)";
+            b.style.boxShadow = "0 8px 28px rgba(30,144,255,0.4)";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#4E7FA4";
+            b.style.background = "#1E90FF";
             b.style.transform = "scale(1)";
             b.style.boxShadow = "none";
           }}
@@ -98,11 +98,11 @@ export default function FinalPanel() {
         viewport={{ once: true }}
         transition={{ delay: 1.1, duration: 1.2 }}
         style={{
-          marginTop: 96,
+          marginTop: 80,
           fontFamily: "var(--font-geist-mono)",
           fontSize: "9px",
           letterSpacing: "0.3em",
-          color: "rgba(92,96,107,0.35)",
+          color: "rgba(122,143,166,0.30)",
           textTransform: "uppercase",
         }}
       >

@@ -6,19 +6,6 @@ export default function HeroPanel() {
   return (
     <div className="pointer-events-auto" style={{ maxWidth: 560, position: "relative" }}>
 
-      {/* Warm glass backing — keeps text crisp against the 3D scene */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "-40px -20px -40px -60px",
-          background: "radial-gradient(ellipse 100% 90% at 20% 50%, rgba(246,244,240,0.82) 0%, transparent 72%)",
-          backdropFilter: "blur(2px)",
-          WebkitBackdropFilter: "blur(2px)",
-          zIndex: -1,
-          pointerEvents: "none",
-        }}
-      />
-
       {/* Badge */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -32,8 +19,8 @@ export default function HeroPanel() {
             width: 5,
             height: 5,
             borderRadius: "50%",
-            background: "#4E7FA4",
-            boxShadow: "0 0 6px rgba(78,127,164,0.5)",
+            background: "#1E90FF",
+            boxShadow: "0 0 8px rgba(30,144,255,0.6)",
           }}
         />
         <span
@@ -41,7 +28,7 @@ export default function HeroPanel() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "10px",
             letterSpacing: "0.26em",
-            color: "#4E7FA4",
+            color: "#1E90FF",
             textTransform: "uppercase",
             opacity: 0.85,
           }}
@@ -60,13 +47,12 @@ export default function HeroPanel() {
           fontWeight: 300,
           letterSpacing: "-0.025em",
           lineHeight: 0.94,
-          color: "#1A1A1A",
+          color: "#E8EDF2",
           marginBottom: 28,
         }}
       >
         Protect<br />
-        Your First<br />
-        <span style={{ color: "#4E7FA4" }}>Home.</span>
+        <span style={{ color: "#1E90FF" }}>the Wire.</span>
       </motion.h1>
 
       {/* Subtext */}
@@ -75,9 +61,9 @@ export default function HeroPanel() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.85 }}
         style={{
-          fontSize: "18px",
+          fontSize: "17px",
           fontWeight: 400,
-          color: "#5C606B",
+          color: "#7A8FA6",
           letterSpacing: "-0.01em",
           marginBottom: 52,
         }}
@@ -95,10 +81,10 @@ export default function HeroPanel() {
         <button
           style={{
             padding: "14px 28px",
-            background: "#4E7FA4",
-            color: "#FFFFFF",
+            background: "#1E90FF",
+            color: "#050A12",
             fontSize: "13px",
-            fontWeight: 500,
+            fontWeight: 600,
             letterSpacing: "0.02em",
             border: "none",
             cursor: "pointer",
@@ -106,13 +92,13 @@ export default function HeroPanel() {
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#3D6E93";
+            b.style.background = "#4DB8FF";
             b.style.transform = "scale(1.02)";
-            b.style.boxShadow = "0 4px 20px rgba(78,127,164,0.35)";
+            b.style.boxShadow = "0 4px 20px rgba(30,144,255,0.45)";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.background = "#4E7FA4";
+            b.style.background = "#1E90FF";
             b.style.transform = "scale(1)";
             b.style.boxShadow = "none";
           }}
@@ -124,23 +110,23 @@ export default function HeroPanel() {
           style={{
             padding: "14px 28px",
             background: "transparent",
-            color: "#5C606B",
+            color: "#7A8FA6",
             fontSize: "13px",
             fontWeight: 400,
             letterSpacing: "0.02em",
-            border: "1px solid rgba(78,127,164,0.25)",
+            border: "1px solid rgba(30,144,255,0.22)",
             cursor: "pointer",
             transition: "all 0.25s ease",
           }}
           onMouseEnter={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.borderColor = "rgba(78,127,164,0.55)";
-            b.style.color = "#1A1A1A";
+            b.style.borderColor = "rgba(30,144,255,0.55)";
+            b.style.color = "#E8EDF2";
           }}
           onMouseLeave={e => {
             const b = e.currentTarget as HTMLButtonElement;
-            b.style.borderColor = "rgba(78,127,164,0.25)";
-            b.style.color = "#5C606B";
+            b.style.borderColor = "rgba(30,144,255,0.22)";
+            b.style.color = "#7A8FA6";
           }}
         >
           Install Extension

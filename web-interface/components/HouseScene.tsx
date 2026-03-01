@@ -5,52 +5,34 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-// ─── Material palette (architectural, refined, light-mode) ───────────────────
-const MAT_MAP: Record<string, { color: string; emissive: string; emissiveIntensity: number; metalness: number; roughness: number; transparent?: boolean; opacity?: number }> = {
-  foundation_brown_brick: { color: "#6B8FAF", emissive: "#4E7FA4", emissiveIntensity: 0.12, metalness: 0.10, roughness: 0.50 },
-  glass_window:           { color: "#B8D0E4", emissive: "#7BA7C6", emissiveIntensity: 0.30, metalness: 0.05, roughness: 0.02, transparent: true, opacity: 0.72 },
-  metal_dark_brown:       { color: "#2E3338", emissive: "#1A1E22", emissiveIntensity: 0.04, metalness: 0.75, roughness: 0.38 },
-  metal_grey:             { color: "#7E8B96", emissive: "#5A6570", emissiveIntensity: 0.06, metalness: 0.60, roughness: 0.42 },
-  plaster_light_brown:    { color: "#CEC7BA", emissive: "#000000", emissiveIntensity: 0.00, metalness: 0.00, roughness: 0.82 },
-  plaster_sand:           { color: "#D8D2C4", emissive: "#000000", emissiveIntensity: 0.00, metalness: 0.00, roughness: 0.86 },
-  plate_grey:             { color: "#3D434A", emissive: "#252A30", emissiveIntensity: 0.05, metalness: 0.52, roughness: 0.46 },
-  wood_balls_brown:       { color: "#8B7355", emissive: "#5A4835", emissiveIntensity: 0.04, metalness: 0.05, roughness: 0.74 },
-  wood_brown:             { color: "#7A6248", emissive: "#4A3C2A", emissiveIntensity: 0.04, metalness: 0.06, roughness: 0.78 },
-};
-
-// ─── Real house loaded from GLB ───────────────────────────────────────────────
+// ─── Wireframe hologram house ─────────────────────────────────────────────────
 function HouseModel() {
   const { scene } = useGLTF("/models/house.glb");
 
-  // Normalize scale + override materials once
   const processed = useMemo(() => {
     const clone = scene.clone(true);
 
-    // Compute bounding box to auto-scale
+    // Auto-scale to target size
     const box = new THREE.Box3().setFromObject(clone);
     const size = new THREE.Vector3();
     box.getSize(size);
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 2.09; // 5% smaller than original 2.2
-    const scale = targetSize / maxDim;
+    const scale = 2.09 / maxDim;
     clone.scale.setScalar(scale);
 
-    // Re-center
+    // Re-center + sit on ground plane
     box.setFromObject(clone);
     const center = new THREE.Vector3();
     box.getCenter(center);
     clone.position.sub(center);
-    // Sit on ground plane
     box.setFromObject(clone);
     clone.position.y -= box.min.y;
 
-    // Remove driveway meshes entirely — detach from scene graph and free GPU resources.
-    // Run `npm run remove-driveway` to bake this into the GLB permanently.
+    // Remove driveway meshes
     const DRIVEWAY_KEYS = [
       'drive', 'driveway', 'road', 'path', 'pavement',
       'concrete', 'asphalt', 'curb', 'walkway', 'sidewalk',
-      'ground_path', 'terrain_path',
-      'terrace', // Cyprys House: front flat platform that reads as a driveway
+      'ground_path', 'terrain_path', 'terrace',
     ];
     const toRemove: THREE.Object3D[] = [];
     clone.traverse(child => {
@@ -73,28 +55,21 @@ function HouseModel() {
       child.parent?.remove(child);
     });
 
-    // Override materials
+    // Override all materials → wireframe hologram
+    const wireframeMat = new THREE.MeshStandardMaterial({
+      color: "#1E90FF",
+      emissive: "#0055CC",
+      emissiveIntensity: 1.4,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.38,
+    });
+
     clone.traverse(child => {
       if (!(child instanceof THREE.Mesh)) return;
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
-      const overridden = mats.map(mat => {
-        const name: string = (mat as THREE.Material).name || "";
-        const def = MAT_MAP[name];
-        if (!def) return mat;
-        const m = new THREE.MeshStandardMaterial({
-          color: def.color,
-          emissive: def.emissive,
-          emissiveIntensity: def.emissiveIntensity,
-          metalness: def.metalness,
-          roughness: def.roughness,
-          transparent: def.transparent ?? false,
-          opacity: def.opacity ?? 1,
-        });
-        return m;
-      });
-      child.material = overridden.length === 1 ? overridden[0] : overridden;
-      child.castShadow = true;
-      child.receiveShadow = true;
+      child.material = wireframeMat;
+      child.castShadow = false;
+      child.receiveShadow = false;
     });
 
     return clone;
@@ -103,31 +78,27 @@ function HouseModel() {
   return <primitive object={processed} />;
 }
 
-// ─── AI Shield ────────────────────────────────────────────────────────────────
+// ─── AI Shield — thin wireframe boundary ──────────────────────────────────────
 function AIShield({ hovered }: { hovered: boolean }) {
   const ref = useRef<THREE.Mesh>(null!);
-  const matRef = useRef<THREE.MeshStandardMaterial>(null!);
   const t = useRef(0);
 
   useFrame((_, delta) => {
     t.current += delta;
-    ref.current.rotation.y += delta * 0.13;
-    ref.current.rotation.x = Math.sin(t.current * 0.25) * 0.08;
-    const target = hovered ? 0.22 : 0.09;
-    matRef.current.opacity += (target - matRef.current.opacity) * 0.06;
+    ref.current.rotation.y += delta * 0.09;
+    ref.current.rotation.x = Math.sin(t.current * 0.2) * 0.04;
   });
 
+  const opacity = hovered ? 0.10 : 0.05;
+
   return (
-    <mesh ref={ref} scale={[1.6, 1.9, 1.6]} position={[0, 0.55, 0]}>
+    <mesh ref={ref} scale={[1.55, 1.82, 1.55]} position={[0, 0.55, 0]}>
       <icosahedronGeometry args={[1, 1]} />
-      <meshStandardMaterial
-        ref={matRef}
-        color="#4E7FA4"
-        emissive="#4E7FA4"
-        emissiveIntensity={0.4}
+      <meshBasicMaterial
+        color="#1E90FF"
         wireframe
         transparent
-        opacity={0.10}
+        opacity={opacity}
       />
     </mesh>
   );
@@ -140,59 +111,93 @@ function PulseRing({ index }: { index: number }) {
   const offset = index * 1.1;
 
   useFrame(({ clock }) => {
-    const t = ((clock.getElapsedTime() * 0.45 + offset) % 2) / 2;
+    const t = ((clock.getElapsedTime() * 0.38 + offset) % 2) / 2;
     ref.current.scale.setScalar(1.5 + t * 1.4);
-    matRef.current.opacity = (1 - t) * 0.28;
+    matRef.current.opacity = (1 - t) * 0.18;
   });
 
   return (
     <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-      <ringGeometry args={[1.0, 1.06, 64]} />
+      <ringGeometry args={[1.0, 1.05, 64]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#4E7FA4"
-        emissive="#4E7FA4"
-        emissiveIntensity={0.6}
+        color="#1E90FF"
+        emissive="#1E90FF"
+        emissiveIntensity={0.8}
         transparent
-        opacity={0.22}
+        opacity={0.15}
         side={THREE.DoubleSide}
       />
     </mesh>
   );
 }
 
-// ─── Threat particle ─────────────────────────────────────────────────────────
-function ThreatParticle({ startPos, targetPos, onDone }: {
+// ─── Threat arrow ─────────────────────────────────────────────────────────────
+function ThreatArrow({ startPos, targetPos, onDone }: {
   startPos: [number, number, number];
   targetPos: [number, number, number];
   onDone: () => void;
 }) {
-  const ref = useRef<THREE.Mesh>(null!);
+  const groupRef = useRef<THREE.Group>(null!);
   const progress = useRef(0);
   const dead = useRef(false);
+  const opacity = useRef(1);
+
+  const [sx, sy, sz] = startPos;
+  const [tx, ty, tz] = targetPos;
+
+  const quaternion = useMemo(() => {
+    const dir = new THREE.Vector3(tx - sx, ty - sy, tz - sz).normalize();
+    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  }, [sx, sy, sz, tx, ty, tz]);
 
   useFrame((_, delta) => {
     if (dead.current) return;
-    progress.current += delta * 0.38;
+    progress.current += delta * 0.40;
     const t = Math.min(progress.current, 1);
     const ease = t * t * (3 - 2 * t);
-    ref.current.position.set(
-      THREE.MathUtils.lerp(startPos[0], targetPos[0], ease),
-      THREE.MathUtils.lerp(startPos[1], targetPos[1], ease),
-      THREE.MathUtils.lerp(startPos[2], targetPos[2], ease)
+    groupRef.current.position.set(
+      THREE.MathUtils.lerp(sx, tx, ease),
+      THREE.MathUtils.lerp(sy, ty, ease),
+      THREE.MathUtils.lerp(sz, tz, ease)
     );
-    if (t >= 0.92) {
-      const m = ref.current.material as THREE.MeshStandardMaterial;
-      m.opacity = Math.max(0, m.opacity - delta * 4);
-      if (m.opacity <= 0) { dead.current = true; onDone(); }
+
+    if (t >= 0.90) {
+      opacity.current = Math.max(0, opacity.current - delta * 6);
+      groupRef.current.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+          (child.material as THREE.MeshStandardMaterial).opacity = opacity.current;
+        }
+      });
+      if (opacity.current <= 0) { dead.current = true; onDone(); }
     }
   });
 
   return (
-    <mesh ref={ref} position={startPos}>
-      <sphereGeometry args={[0.045, 8, 8]} />
-      <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={3} transparent opacity={1} />
-    </mesh>
+    <group ref={groupRef} position={startPos} quaternion={quaternion}>
+      {/* Cone tip — leading edge pointing toward target */}
+      <mesh position={[0, 0.11, 0]}>
+        <coneGeometry args={[0.026, 0.085, 6]} />
+        <meshStandardMaterial
+          color="#ef4444"
+          emissive="#ff1a1a"
+          emissiveIntensity={5}
+          transparent
+          opacity={1}
+        />
+      </mesh>
+      {/* Shaft */}
+      <mesh position={[0, -0.04, 0]}>
+        <cylinderGeometry args={[0.007, 0.007, 0.16, 6]} />
+        <meshStandardMaterial
+          color="#ef4444"
+          emissive="#cc0000"
+          emissiveIntensity={3}
+          transparent
+          opacity={0.80}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -218,7 +223,7 @@ function Threats() {
         const sp: [number, number, number] = [Math.cos(t.angle) * d, 0.6 + Math.random() * 0.8, Math.sin(t.angle) * d];
         const ep: [number, number, number] = [Math.cos(t.angle) * 1.3, sp[1] * 0.5, Math.sin(t.angle) * 1.3];
         return (
-          <ThreatParticle
+          <ThreatArrow
             key={t.id}
             startPos={sp}
             targetPos={ep}
@@ -244,11 +249,11 @@ function DataRing() {
         const r = 2.1;
         return (
           <mesh key={i} position={[Math.cos(a) * r, 0, Math.sin(a) * r]}>
-            <sphereGeometry args={[0.02, 6, 6]} />
+            <sphereGeometry args={[0.018, 6, 6]} />
             <meshStandardMaterial
-              color={i % 5 === 0 ? "#EDE8DE" : "#4E7FA4"}
-              emissive={i % 5 === 0 ? "#C8B89A" : "#4E7FA4"}
-              emissiveIntensity={2.5}
+              color={i % 5 === 0 ? "#50FA7B" : "#1E90FF"}
+              emissive={i % 5 === 0 ? "#20C050" : "#1E90FF"}
+              emissiveIntensity={3}
             />
           </mesh>
         );
@@ -279,17 +284,20 @@ function VerifyPulse({ angle, delay }: { angle: number; delay: number }) {
     const t = ((clock.getElapsedTime() * 0.35 + delay) % 3) / 3;
     const r = 1.4 + t * 2.2;
     ref.current.position.set(Math.cos(angle) * r, 0.5, Math.sin(angle) * r);
-    matRef.current.opacity = (1 - t) * 0.7;
-    ref.current.scale.setScalar(1 + t * 0.6);
+    matRef.current.opacity = (1 - t) * 0.6;
+    ref.current.scale.setScalar(1 + t * 0.5);
   });
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.022, 6, 6]} />
+      <sphereGeometry args={[0.020, 6, 6]} />
       <meshStandardMaterial
         ref={matRef}
-        color="#4E7FA4" emissive="#4E7FA4" emissiveIntensity={1.0}
-        transparent opacity={0.6}
+        color="#50FA7B"
+        emissive="#50FA7B"
+        emissiveIntensity={1.2}
+        transparent
+        opacity={0.5}
       />
     </mesh>
   );
@@ -304,7 +312,7 @@ function HouseFallback() {
   return (
     <mesh ref={ref} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 0.8, 1]} />
-      <meshStandardMaterial color="#1e3a5f" emissive="#0f2040" emissiveIntensity={0.3} wireframe />
+      <meshStandardMaterial color="#1E90FF" emissive="#0055CC" emissiveIntensity={1.0} wireframe />
     </mesh>
   );
 }
@@ -317,26 +325,34 @@ function Scene({ scrollY }: { scrollY: number }) {
 
   useFrame((_, delta) => {
     t.current += delta;
-    // Slow continuous rotation + scroll parallax
     groupRef.current.rotation.y = t.current * 0.08 + scrollY * 0.0008;
+
+    // Scroll-based y-drift + scale from DOM
+    const scrollEl = document.documentElement;
+    const sp = Math.min(
+      scrollEl.scrollTop / Math.max(1, scrollEl.scrollHeight - scrollEl.clientHeight),
+      1
+    );
+    groupRef.current.position.y = THREE.MathUtils.lerp(
+      groupRef.current.position.y,
+      sp * 0.5,
+      delta * 2
+    );
+    const targetScale = 1 - sp * 0.10;
+    groupRef.current.scale.setScalar(
+      THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, delta * 2)
+    );
   });
 
   return (
     <>
-      {/* Architectural lighting — bright, even, refined */}
-      <ambientLight intensity={1.2} />
-      {/* Warm natural sunlight */}
-      <directionalLight position={[4, 7, 4]} intensity={1.8} color="#FFF9F0" castShadow />
-      {/* Cool sky fill from left */}
-      <directionalLight position={[-4, 2, -4]} intensity={0.6} color="#D4E5F0" />
-      {/* Soft steel-blue fill overhead */}
-      <pointLight position={[0, 5, 0]} color="#4E7FA4" intensity={0.5} distance={9} />
-      {/* Warm ambient fill */}
-      <pointLight position={[-2, 2, 2]} color="#F5E8D0" intensity={0.4} distance={6} />
+      {/* Dark cyber lighting */}
+      <ambientLight intensity={0.15} color="#0A1525" />
+      <pointLight position={[0, 4, 0]} color="#1E90FF" intensity={1.8} distance={8} />
+      <pointLight position={[3, 2, 3]} color="#4DB8FF" intensity={0.6} distance={6} />
+      <pointLight position={[-3, 1, -3]} color="#0040AA" intensity={0.4} distance={5} />
 
-      {/* No scene background or fog — CSS gradient shows through the alpha canvas */}
-
-      <Float speed={1.0} rotationIntensity={0.1} floatIntensity={0.35}>
+      <Float speed={1.0} rotationIntensity={0.08} floatIntensity={0.30}>
         <group
           ref={groupRef}
           onPointerOver={() => setHovered(true)}
@@ -353,15 +369,6 @@ function Scene({ scrollY }: { scrollY: number }) {
 
       {[0, 1, 2].map(i => <PulseRing key={i} index={i} />)}
       <DataRing />
-
-      {/* Ground glow */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <circleGeometry args={[2.8, 64]} />
-        <meshStandardMaterial
-          color="#EDE8DE" emissive="#C8B89A" emissiveIntensity={0.15}
-          transparent opacity={0.12}
-        />
-      </mesh>
     </>
   );
 }
@@ -374,7 +381,6 @@ export default function HouseScene({ scrollY = 0 }: { scrollY?: number }) {
         camera={{ position: [0, 1.2, 4.5], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 1.5]}
-        shadows
       >
         <Scene scrollY={scrollY} />
       </Canvas>

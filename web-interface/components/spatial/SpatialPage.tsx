@@ -12,37 +12,38 @@ const HouseScene = dynamic(() => import("@/components/HouseScene"), { ssr: false
 export default function SpatialPage() {
   const { scrollYProgress } = useScroll();
   const canvasY = useTransform(scrollYProgress, [0, 1], ["0%", "-6%"]);
+  const canvasOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
 
   return (
     <div className="relative">
 
-      {/* ── Warm architectural background — canvas alpha lets this show through ── */}
+      {/* ── Dark cyber background ── */}
       <div
         className="fixed inset-0"
         style={{
           zIndex: 0,
-          background: "linear-gradient(135deg, #EDF2F7 0%, #F6F4F0 45%, #F4EFE8 100%)",
+          background: "linear-gradient(135deg, #030810 0%, #050A12 55%, #060C18 100%)",
         }}
       />
 
-      {/* ── Spatial grid — offset so no line lands on the left/top edge ── */}
+      {/* ── Thin electric grid ── */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           zIndex: 1,
           backgroundImage: `
-            linear-gradient(rgba(78, 127, 164, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(78, 127, 164, 0.04) 1px, transparent 1px)
+            linear-gradient(rgba(30, 144, 255, 0.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(30, 144, 255, 0.055) 1px, transparent 1px)
           `,
           backgroundSize: "80px 80px",
           backgroundPosition: "40px 40px",
         }}
       />
 
-      {/* ── 3D House Canvas — transparent, gradient shows through ── */}
+      {/* ── 3D House Canvas — fades on scroll ── */}
       <motion.div
         className="fixed inset-0"
-        style={{ zIndex: 2, y: canvasY }}
+        style={{ zIndex: 2, y: canvasY, opacity: canvasOpacity }}
       >
         <HouseScene />
       </motion.div>
@@ -60,9 +61,8 @@ export default function SpatialPage() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "11px",
             letterSpacing: "0.22em",
-            color: "#1A1A1A",
+            color: "rgba(232,237,242,0.38)",
             textTransform: "uppercase",
-            opacity: 0.45,
           }}
         >
           HomeGuard
@@ -74,8 +74,8 @@ export default function SpatialPage() {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#4E7FA4",
-              boxShadow: "0 0 8px rgba(78,127,164,0.4)",
+              background: "#1E90FF",
+              boxShadow: "0 0 8px rgba(30,144,255,0.55)",
               animation: "pulse 2s ease-in-out infinite",
             }}
           />
@@ -84,7 +84,7 @@ export default function SpatialPage() {
               fontFamily: "var(--font-geist-mono)",
               fontSize: "10px",
               letterSpacing: "0.2em",
-              color: "rgba(78,127,164,0.7)",
+              color: "rgba(30,144,255,0.65)",
             }}
           >
             PROTECTED
@@ -110,7 +110,7 @@ export default function SpatialPage() {
         {/* 2 — THREAT */}
         <section
           style={{
-            minHeight: "100vh",
+            minHeight: "68vh",
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-end",
@@ -123,7 +123,7 @@ export default function SpatialPage() {
         {/* 3 — HOW IT WORKS */}
         <section
           style={{
-            minHeight: "100vh",
+            minHeight: "68vh",
             display: "flex",
             alignItems: "center",
             padding: "0 clamp(32px, 8vw, 128px)",
@@ -135,7 +135,7 @@ export default function SpatialPage() {
         {/* 4 — FINAL CTA */}
         <section
           style={{
-            minHeight: "100vh",
+            minHeight: "72vh",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

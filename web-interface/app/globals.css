@@ -2,16 +2,16 @@
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:           #F6F4F0;            /* warm off-white */
-  --surface:      #EDF2F7;            /* light steel-blue tint */
-  --sand:         #EDE8DE;            /* warm sand */
-  --text:         #1A1A1A;            /* near-black */
-  --text-muted:   #5C606B;            /* medium charcoal */
-  --accent:       #4E7FA4;            /* muted steel blue */
-  --accent-light: #7BA7C6;            /* lighter accent */
+  --bg:           #050A12;            /* deep dark */
+  --surface:      #0A1525;            /* dark surface */
+  --sand:         #0D1A2A;            /* dark tint */
+  --text:         #E8EDF2;            /* near-white */
+  --text-muted:   #7A8FA6;            /* muted blue-gray */
+  --accent:       #1E90FF;            /* electric blue */
+  --accent-light: #4DB8FF;            /* lighter accent */
   --red:          #ef4444;
-  --glass:        rgba(248, 247, 244, 0.85);
-  --glass-border: rgba(78, 127, 164, 0.1);
+  --glass:        rgba(5, 15, 30, 0.88);
+  --glass-border: rgba(30, 144, 255, 0.12);
 }
 
 @theme inline {
@@ -27,7 +27,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: linear-gradient(135deg, #EDF2F7 0%, #F6F4F0 45%, #F4EFE8 100%);
+  background: #050A12;
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-geist-sans), -apple-system, sans-serif;
@@ -40,7 +40,7 @@ body {
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar          { width: 2px; }
 ::-webkit-scrollbar-track    { background: transparent; }
-::-webkit-scrollbar-thumb    { background: rgba(78, 127, 164, 0.25); border-radius: 1px; }
+::-webkit-scrollbar-thumb    { background: rgba(30, 144, 255, 0.25); border-radius: 1px; }
 
 /* ── Glass utility ─────────────────────────────────────────────────────────── */
 .glass {
@@ -67,7 +67,7 @@ body {
   left:       0;
   right:      0;
   height:     1px;
-  background: linear-gradient(90deg, transparent, rgba(78, 127, 164, 0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(30, 144, 255, 0.22), transparent);
   animation:  scan 24s linear infinite;
   pointer-events: none;
   z-index:    9999;

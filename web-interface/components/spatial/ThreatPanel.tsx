@@ -17,14 +17,14 @@ export default function ThreatPanel() {
           padding: "44px 48px",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          background: "rgba(248, 247, 244, 0.88)",
-          border: "1px solid rgba(239,68,68,0.1)",
+          background: "rgba(5, 15, 30, 0.88)",
+          border: "1px solid rgba(239,68,68,0.14)",
           position: "relative",
           overflow: "hidden",
-          boxShadow: "0 2px 40px rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 40px rgba(0,0,0,0.4)",
         }}
       >
-        {/* Very soft red glow — top right */}
+        {/* Soft red glow — top right */}
         <div
           style={{
             position: "absolute",
@@ -32,7 +32,7 @@ export default function ThreatPanel() {
             right: -50,
             width: 200,
             height: 200,
-            background: "rgba(239,68,68,0.05)",
+            background: "rgba(239,68,68,0.07)",
             borderRadius: "50%",
             filter: "blur(40px)",
             pointerEvents: "none",
@@ -57,7 +57,7 @@ export default function ThreatPanel() {
                 transition={{ delay: 0.7 + i * 0.07, duration: 0.4 }}
                 style={{
                   width: 3,
-                  background: i === 1 ? "rgba(239,68,68,0.75)" : "rgba(239,68,68,0.2)",
+                  background: i === 1 ? "rgba(239,68,68,0.80)" : "rgba(239,68,68,0.22)",
                   borderRadius: 1,
                 }}
               />
@@ -68,7 +68,7 @@ export default function ThreatPanel() {
               fontFamily: "var(--font-geist-mono)",
               fontSize: "9px",
               letterSpacing: "0.28em",
-              color: "rgba(239,68,68,0.55)",
+              color: "rgba(239,68,68,0.60)",
               textTransform: "uppercase",
             }}
           >
@@ -82,7 +82,7 @@ export default function ThreatPanel() {
             fontWeight: 300,
             letterSpacing: "-0.02em",
             lineHeight: 1.2,
-            color: "#1A1A1A",
+            color: "#E8EDF2",
             marginBottom: 16,
           }}
         >
@@ -93,7 +93,7 @@ export default function ThreatPanel() {
             fontSize: "clamp(16px, 2vw, 19px)",
             fontWeight: 400,
             lineHeight: 1.5,
-            color: "#5C606B",
+            color: "#7A8FA6",
           }}
         >
           Recovery almost<br />never does.
@@ -104,7 +104,7 @@ export default function ThreatPanel() {
           whileInView={{ width: 48 }}
           viewport={{ once: true }}
           transition={{ delay: 0.9, duration: 0.6 }}
-          style={{ height: 1, background: "rgba(239,68,68,0.3)", marginTop: 36 }}
+          style={{ height: 1, background: "rgba(239,68,68,0.35)", marginTop: 36 }}
         />
       </div>
     </motion.div>

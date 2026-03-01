@@ -1,0 +1,7 @@
+google-genai
+python-dotenv
+dnspython
+requests
+pdfplumber
+python-whois
+pytest

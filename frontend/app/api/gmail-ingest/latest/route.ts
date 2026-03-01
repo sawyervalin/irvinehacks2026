@@ -1,0 +1,40 @@
+import { NextResponse } from "next/server";
+import { getLatestBatch } from "../../../../lib/gmailIngestStore";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function noStoreHeaders() {
+  return {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+  };
+}
+
+export async function GET() {
+  const latest = getLatestBatch();
+
+  if (!latest) {
+    return NextResponse.json(
+      {
+        ok: true,
+        hasData: false,
+        ingestedCount: 0,
+        ingestedAt: null,
+        batchId: null
+      },
+      { headers: noStoreHeaders() }
+    );
+  }
+
+  return NextResponse.json(
+    {
+      ok: true,
+      hasData: true,
+      ingestedCount: latest.ingestedCount,
+      ingestedAt: latest.ingestedAt,
+      batchId: latest.batchId
+    },
+    { headers: noStoreHeaders() }
+  );
+}

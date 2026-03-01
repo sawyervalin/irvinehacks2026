@@ -1,0 +1,718 @@
+.pageShell {
+  min-height: 100vh;
+  width: 100%;
+  padding: clamp(16px, 1.8vw, 28px);
+  background:
+    radial-gradient(circle at 10% 16%, rgba(75, 123, 167, 0.12), transparent 42%),
+    radial-gradient(circle at 92% 88%, rgba(28, 76, 112, 0.11), transparent 48%),
+    transparent;
+}
+
+.appFrame {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+}
+
+.contentPane {
+  padding: clamp(18px, 2.1vw, 30px);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(28, 76, 112, 0.16);
+  padding-bottom: 10px;
+  margin-bottom: clamp(20px, 2.6vw, 32px);
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.topLinks {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topLink {
+  font-family: var(--font-geist-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(28, 76, 112, 0.72);
+}
+
+.headerRow {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.85rem, 3.6vw, 2.8rem);
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 560px;
+  font-size: clamp(0.92rem, 1.2vw, 1rem);
+  line-height: 1.45;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(56px, 9%) minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  width: min(680px, 100%);
+  margin: 0 auto clamp(22px, 2.4vw, 32px);
+}
+
+.timelineRail {
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(75, 123, 167, 0.2), rgba(28, 76, 112, 0.45), rgba(75, 123, 167, 0.2));
+  border-radius: 999px;
+}
+
+.timelineStep {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  justify-content: center;
+}
+
+.timelineStep[aria-current="step"] .timelineLabel {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.timelineDot {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(28, 76, 112, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--accent);
+  font-family: var(--font-geist-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.timelineStep:hover .timelineDot {
+  transform: translateY(-1px) scale(1.03);
+}
+
+.timelineDotDone {
+  border-color: rgba(28, 76, 112, 0.9);
+  background: linear-gradient(135deg, #1c4c70, #4b7ba7);
+  color: #f4f8fd;
+  box-shadow: 0 10px 24px rgba(28, 76, 112, 0.25);
+}
+
+.timelineLabel {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+}
+
+.statusText {
+  width: min(680px, 100%);
+  margin: 0 auto 10px;
+  border: 1px solid rgba(28, 76, 112, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: var(--accent);
+  background: rgba(224, 236, 248, 0.52);
+  font-size: 0.84rem;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+
+.formCard {
+  border-radius: 14px;
+  background: rgba(248, 251, 255, 0.84);
+  border: 1px solid rgba(75, 123, 167, 0.2);
+  padding: clamp(12px, 1.8vw, 18px);
+  box-shadow: 0 6px 18px rgba(28, 76, 112, 0.08);
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(1.12rem, 1.6vw, 1.4rem);
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.infoBox {
+  border-radius: 10px;
+  background: linear-gradient(160deg, #1c4c70, #4b7ba7);
+  border: 1px solid rgba(192, 215, 237, 0.45);
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.infoPrimary {
+  margin: 0;
+  color: #f2f8ff;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.infoSecondary {
+  margin: 4px 0 0;
+  color: rgba(233, 243, 255, 0.86);
+  font-size: 0.76rem;
+}
+
+.textArea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(75, 123, 167, 0.26);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 9px 10px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.manualFieldInput,
+.fileInput {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(75, 123, 167, 0.26);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 9px 10px;
+  font-size: 0.84rem;
+  color: var(--accent);
+  box-sizing: border-box;
+}
+
+.fileInput {
+  margin-bottom: 10px;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.softButton {
+  border: 1px solid rgba(28, 76, 112, 0.24);
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-width: 96px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.softButton:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(28, 76, 112, 0.42);
+}
+
+.ctaButton {
+  border: 0;
+  border-radius: 999px;
+  margin-top: 14px;
+  width: min(680px, 100%);
+  margin-inline: auto;
+  display: block;
+  padding: 11px 20px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f4f8fd;
+  background: linear-gradient(140deg, #1c4c70, #4b7ba7);
+  cursor: pointer;
+  box-shadow: 0 14px 24px rgba(28, 76, 112, 0.26);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(28, 76, 112, 0.32);
+}
+
+.ctaButton:disabled,
+.softButton:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.emptyCanvas {
+  width: min(680px, 100%);
+  margin: 0 auto;
+  border-radius: 14px;
+  border: 1px solid rgba(75, 123, 167, 0.22);
+  background: rgba(248, 251, 255, 0.84);
+  padding: clamp(16px, 2.5vw, 24px);
+  box-shadow: 0 8px 24px rgba(28, 76, 112, 0.08);
+}
+
+.summaryTitle {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.12rem, 1.9vw, 1.5rem);
+}
+
+.summaryText {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .contentPane {
+    padding: 18px 14px;
+  }
+
+  .topLinks {
+    display: none;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .timelineRail {
+    display: none;
+  }
+
+  .timelineStep {
+    justify-content: flex-start;
+    border: 1px solid rgba(75, 123, 167, 0.2);
+    border-radius: 12px;
+    padding: 9px;
+    background: rgba(255, 255, 255, 0.74);
+  }
+}
+
+/* ── Threat Summary Dashboard ───────────────────────────────────────────────── */
+
+.threatGrid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Score Hero ── */
+.scoreHero {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(28, 76, 112, 0.11);
+  box-shadow:
+    0 12px 42px rgba(28, 76, 112, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  overflow: hidden;
+}
+
+.gaugePane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 22px;
+  border-right: 1px solid rgba(28, 76, 112, 0.08);
+  gap: 10px;
+}
+
+.gaugeTopLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.gaugeSvg {
+  width: 214px;
+  height: 214px;
+}
+
+.riskCategoryBadge {
+  border-radius: 999px;
+  padding: 5px 16px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1.5px solid;
+}
+
+.infoPane {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.infoHeading {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.infoModelName {
+  font-family: var(--font-geist-mono);
+  font-size: 0.61rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Hero stat row */
+.heroStats {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(28, 76, 112, 0.09);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(28, 76, 112, 0.03);
+}
+
+.heroStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 3px;
+}
+
+.heroStatNum {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.heroStatLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.heroStatDivider {
+  width: 1px;
+  background: rgba(28, 76, 112, 0.09);
+  flex-shrink: 0;
+}
+
+/* Tier weight bars (inside hero) */
+.tierBars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tierBarRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tierBarMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.tierBarLabel {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.tierBarPts {
+  font-family: var(--font-geist-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.tierBarTrack {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.08);
+  overflow: hidden;
+}
+
+.tierBarFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── Tier Card Grid ── */
+.tierCardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tierCard {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(75, 123, 167, 0.13);
+  border-left-width: 3px;           /* color injected via inline borderLeftColor */
+  padding: clamp(14px, 1.8vw, 20px);
+  box-shadow: 0 4px 18px rgba(28, 76, 112, 0.06);
+}
+
+.tierCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.tierCardTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--accent);
+  font-size: clamp(0.9rem, 1.3vw, 1.06rem);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.tierWeightPill {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  border: 1.5px solid;
+}
+
+/* Trigger summary line above progress bar */
+.tierStatRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.tierStatLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.tierStatValue {
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.tierProgressTrack {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.07);
+  margin-bottom: 13px;
+  overflow: hidden;
+}
+
+.tierProgressFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── Signal list ── */
+.signalList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.signalRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.signalMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.signalIdRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Status dot */
+.signalDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.signalId {
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.signalIdMuted {
+  color: rgba(90, 107, 128, 0.45);
+}
+
+.signalWeightLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 0.62rem;
+  flex-shrink: 0;
+}
+
+.signalDescription {
+  margin: 0 0 0 14px;
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  line-height: 1.42;
+}
+
+.signalBarTrack {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(28, 76, 112, 0.07);
+  overflow: hidden;
+  margin: 3px 0 0 14px;
+}
+
+.signalBarFill {
+  height: 100%;
+  border-radius: 999px;
+  opacity: 0.5;
+}
+
+/* Expand / collapse button */
+.expandButton {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(28, 76, 112, 0.08);
+  font-family: var(--font-geist-mono);
+  font-size: 0.67rem;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  text-align: center;
+  opacity: 0.75;
+  transition: opacity 160ms ease;
+}
+
+.expandButton:hover {
+  opacity: 1;
+}
+
+.summaryActions {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.summaryClearButton {
+  border: 1px solid rgba(28, 76, 112, 0.24);
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-width: 160px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+.summaryClearButton:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(28, 76, 112, 0.42);
+}
+
+.summaryClearButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .scoreHero {
+    grid-template-columns: 1fr;
+  }
+
+  .gaugePane {
+    border-right: none;
+    border-bottom: 1px solid rgba(28, 76, 112, 0.08);
+    padding: 24px 20px 18px;
+  }
+
+  .tierCardGrid {
+    grid-template-columns: 1fr;
+  }
+}

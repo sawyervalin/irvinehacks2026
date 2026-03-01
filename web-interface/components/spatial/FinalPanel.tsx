@@ -31,7 +31,7 @@ export default function FinalPanel() {
         transition={{ delay: 0.2, duration: 1 }}
         style={{
           fontSize: "clamp(40px, 7vw, 80px)",
-          fontWeight: 300,
+          fontWeight: 400,
           letterSpacing: "-0.025em",
           lineHeight: 1.05,
           color: "#1A2540",
@@ -48,7 +48,7 @@ export default function FinalPanel() {
         transition={{ delay: 0.5, duration: 0.9 }}
         style={{
           fontSize: "17px",
-          fontWeight: 400,
+          fontWeight: 500,
           color: "#5A6B80",
           marginBottom: 48,
           letterSpacing: "-0.01em",
@@ -69,7 +69,7 @@ export default function FinalPanel() {
             background: "#1C4C70",
             color: "#FFFFFF",
             fontSize: "13px",
-            fontWeight: 600,
+            fontWeight: 700,
             letterSpacing: "0.02em",
             border: "none",
             cursor: "pointer",

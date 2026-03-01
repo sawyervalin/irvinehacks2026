@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Fredoka, Nunito_Sans } from "next/font/google";
+import { ADLaM_Display } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Fredoka({
+const adlamSans = ADLaM_Display({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "400",
 });
 
-const spaceMono = Nunito_Sans({
+const adlamMono = ADLaM_Display({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.variable} ${spaceMono.variable} antialiased`}>
+      <body className={`${adlamSans.variable} ${adlamMono.variable} antialiased`}>
         {children}
       </body>
     </html>

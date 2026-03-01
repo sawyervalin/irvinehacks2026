@@ -115,7 +115,7 @@ export default function ThreatPanel() {
             <h2
               style={{
                 fontSize: "clamp(22px, 3vw, 30px)",
-                fontWeight: 300,
+                fontWeight: 400,
                 letterSpacing: "-0.02em",
                 lineHeight: 1.2,
                 color: "#1A2540",
@@ -129,7 +129,7 @@ export default function ThreatPanel() {
             <p
               style={{
                 fontSize: "12px",
-                fontWeight: 400,
+                fontWeight: 500,
                 lineHeight: 1.5,
                 color: "#5A6B80",
                 marginBottom: 20,

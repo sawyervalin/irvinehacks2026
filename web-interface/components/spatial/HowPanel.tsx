@@ -138,7 +138,7 @@ export default function HowPanel() {
                     <div
                       style={{
                         fontSize: "clamp(20px, 2.8vw, 26px)",
-                        fontWeight: 300,
+                        fontWeight: 400,
                         letterSpacing: "-0.02em",
                         color: "#1A2540",
                         lineHeight: 1,
@@ -150,7 +150,7 @@ export default function HowPanel() {
                     <div
                       style={{
                         fontSize: "11px",
-                        fontWeight: 400,
+                        fontWeight: 500,
                         color: "#5A6B80",
                       }}
                     >

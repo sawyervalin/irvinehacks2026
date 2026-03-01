@@ -126,7 +126,7 @@ export default function DataField() {
           style={{
             fontFamily: "var(--font-geist-mono)",
             fontSize: "17px",
-            fontWeight: 400,
+            fontWeight: 500,
             color: "#1A2540",
             letterSpacing: "-0.03em",
             lineHeight: 1,

@@ -44,7 +44,7 @@ export default function HeroPanel() {
         transition={{ duration: 1.1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontSize: "clamp(52px, 8vw, 96px)",
-          fontWeight: 300,
+          fontWeight: 400,
           letterSpacing: "-0.025em",
           lineHeight: 0.94,
           color: "#1A2540",
@@ -62,7 +62,7 @@ export default function HeroPanel() {
         transition={{ duration: 0.8, delay: 0.85 }}
         style={{
           fontSize: "17px",
-          fontWeight: 400,
+          fontWeight: 500,
           color: "#5A6B80",
           letterSpacing: "-0.01em",
           marginBottom: 52,
@@ -84,7 +84,7 @@ export default function HeroPanel() {
             background: "#1C4C70",
             color: "#FFFFFF",
             fontSize: "13px",
-            fontWeight: 600,
+            fontWeight: 700,
             letterSpacing: "0.02em",
             border: "none",
             cursor: "pointer",
@@ -112,7 +112,7 @@ export default function HeroPanel() {
             background: "transparent",
             color: "#5A6B80",
             fontSize: "13px",
-            fontWeight: 400,
+            fontWeight: 500,
             letterSpacing: "0.02em",
             border: "1px solid rgba(28,76,112,0.20)",
             cursor: "pointer",

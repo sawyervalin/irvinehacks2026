@@ -147,7 +147,7 @@ function PanelCard({ panel }: { panel: PanelData }) {
       <div
         style={{
           fontSize:      "clamp(22px, 2.2vw, 26px)",
-          fontWeight:    300,
+          fontWeight:    400,
           letterSpacing: "-0.02em",
           lineHeight:    1.18,
           color:         "#1A2540",
@@ -201,7 +201,7 @@ function PanelCard({ panel }: { panel: PanelData }) {
                 {step.num}
               </span>
               <div>
-                <div style={{ fontSize: "18px", fontWeight: 300, letterSpacing: "-0.02em", color: "#1A2540", lineHeight: 1, marginBottom: 5 }}>
+                <div style={{ fontSize: "18px", fontWeight: 400, letterSpacing: "-0.02em", color: "#1A2540", lineHeight: 1, marginBottom: 5 }}>
                   {step.label}
                 </div>
                 <div style={{ fontSize: "10.5px", color: "#5A6B80" }}>

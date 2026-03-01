@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ScalarField {
   raw: string | number | null;
@@ -26,10 +26,20 @@ interface BankVerification {
   status: "found" | "not_found" | "invalid_format" | "skipped";
 }
 
+interface DomainVerification {
+  domain: string | null;
+  risk_score: number;
+  checks: Record<string, { risk_contribution: number; [key: string]: unknown }>;
+  llm_red_flags?: string[];
+  error?: string;
+}
+
 interface ParseResult {
   document_text_snippet?: string;
   extracted_fields?: Record<string, AnyField>;
+  llm_extracted?: Record<string, unknown>;
   bank_name_verification?: BankVerification;
+  domain_verification?: DomainVerification;
   parsing_errors?: string[];
   version?: string;
   error?: string;
@@ -68,6 +78,18 @@ function formatNormalized(field: AnyField): string {
   return String(val);
 }
 
+function riskColor(score: number): { bg: string; border: string; text: string; bar: string } {
+  if (score <= 30)  return { bg: "#f0fdf4", border: "#16a34a", text: "#15803d", bar: "#22c55e" };
+  if (score <= 60)  return { bg: "#fffbeb", border: "#d97706", text: "#92400e", bar: "#f59e0b" };
+  return              { bg: "#fef2f2", border: "#dc2626", text: "#b91c1c", bar: "#ef4444" };
+}
+
+function riskLabel(score: number): string {
+  if (score <= 30) return "Low Risk";
+  if (score <= 60) return "Medium Risk";
+  return "High Risk";
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function FieldRow({ label, field }: { label: string; field: AnyField }) {
@@ -78,43 +100,28 @@ function FieldRow({ label, field }: { label: string; field: AnyField }) {
   if (value === "—") return null;
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "180px 1fr",
-        alignItems: "start",
-        gap: "0.75rem",
-        padding: "0.65rem 0",
-        borderBottom: "1px solid #f1f5f9",
-      }}
-    >
-      <span style={{ fontSize: "0.8rem", color: "#6b7280", fontWeight: 500 }}>
-        {label}
-      </span>
-      <span
-        style={{
-          fontSize: "0.875rem",
-          color: "#111827",
-          fontWeight: 600,
-          wordBreak: "break-all",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          flexWrap: "wrap",
-        }}
-      >
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "180px 1fr",
+      alignItems: "start",
+      gap: "0.75rem",
+      padding: "0.65rem 0",
+      borderBottom: "1px solid #f1f5f9",
+    }}>
+      <span style={{ fontSize: "0.8rem", color: "#6b7280", fontWeight: 500 }}>{label}</span>
+      <span style={{
+        fontSize: "0.875rem", color: "#111827", fontWeight: 600,
+        wordBreak: "break-all", display: "flex", alignItems: "center",
+        gap: "0.5rem", flexWrap: "wrap",
+      }}>
         {value}
         {isRouting && (
-          <span
-            style={{
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              padding: "0.1rem 0.45rem",
-              borderRadius: "9999px",
-              background: checksumValid ? "#dcfce7" : "#fee2e2",
-              color: checksumValid ? "#15803d" : "#b91c1c",
-            }}
-          >
+          <span style={{
+            fontSize: "0.7rem", fontWeight: 700, padding: "0.1rem 0.45rem",
+            borderRadius: "9999px",
+            background: checksumValid ? "#dcfce7" : "#fee2e2",
+            color: checksumValid ? "#15803d" : "#b91c1c",
+          }}>
             {checksumValid ? "ABA ✓" : "ABA ✗"}
           </span>
         )}
@@ -123,24 +130,95 @@ function FieldRow({ label, field }: { label: string; field: AnyField }) {
   );
 }
 
-function Spinner() {
+function Spinner({ label }: { label?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "1rem 0" }}>
-      <div
-        style={{
-          width: "20px",
-          height: "20px",
-          border: "2.5px solid #e5e7eb",
-          borderTopColor: "#4f46e5",
-          borderRadius: "50%",
-          animation: "spin 0.7s linear infinite",
-          flexShrink: 0,
-        }}
-      />
+      <div style={{
+        width: "20px", height: "20px",
+        border: "2.5px solid #e5e7eb", borderTopColor: "#4f46e5",
+        borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0,
+      }} />
       <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-        Running parser…
+        {label ?? "Analyzing with Gemini…"}
       </span>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function RiskScoreCard({ dv }: { dv: DomainVerification }) {
+  const score = dv.risk_score ?? 0;
+  const c = riskColor(score);
+  const flags = dv.llm_red_flags ?? [];
+
+  return (
+    <div style={{
+      background: "#fff", borderRadius: "16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.07)", overflow: "hidden", marginBottom: "1rem",
+    }}>
+      <div style={{
+        padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#111827" }}>
+          Domain Risk Score
+        </span>
+        {dv.domain && (
+          <span style={{ fontSize: "0.75rem", color: "#6b7280", fontFamily: "ui-monospace, monospace" }}>
+            {dv.domain}
+          </span>
+        )}
+      </div>
+
+      <div style={{ padding: "1.25rem 1.5rem", background: c.bg, borderLeft: `4px solid ${c.border}` }}>
+        {/* Score + label */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "0.75rem" }}>
+          <span style={{ fontSize: "2.5rem", fontWeight: 800, color: c.text, lineHeight: 1 }}>
+            {score}
+          </span>
+          <span style={{ fontSize: "0.8rem", color: c.text, fontWeight: 600 }}>/ 100 — {riskLabel(score)}</span>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: "6px", background: "#e5e7eb", borderRadius: "9999px", marginBottom: "1rem" }}>
+          <div style={{
+            height: "100%", borderRadius: "9999px",
+            background: c.bar, width: `${Math.min(score, 100)}%`,
+            transition: "width 0.5s ease",
+          }} />
+        </div>
+
+        {/* Check breakdown */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: flags.length > 0 ? "0.75rem" : 0 }}>
+          {Object.entries(dv.checks ?? {}).map(([key, check]) => {
+            const pts = check.risk_contribution as number;
+            if (pts === 0) return null;
+            const label = key.replace(/_/g, " ");
+            return (
+              <span key={key} style={{
+                fontSize: "0.7rem", fontWeight: 600, padding: "0.15rem 0.5rem",
+                borderRadius: "9999px", background: "#fee2e2", color: "#b91c1c",
+              }}>
+                +{pts} {label}
+              </span>
+            );
+          })}
+        </div>
+
+        {/* LLM red flags */}
+        {flags.length > 0 && (
+          <div>
+            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: c.text, margin: "0 0 0.4rem" }}>
+              AI-detected red flags
+            </p>
+            <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+              {flags.map((f, i) => (
+                <li key={i} style={{ fontSize: "0.8rem", color: "#374151", marginBottom: "0.2rem" }}>{f}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -155,68 +233,93 @@ export default function WireParserPage() {
   const [apiError, setApiError]   = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Run the Python parser when a PDF is selected.
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setFileName(file.name);
+  async function submit(body: FormData) {
     setResult(null);
     setApiError("");
     setLoading(true);
-
     try {
-      const form = new FormData();
-      form.append("file", file);
-
-      const res = await fetch("/api/parse-pdf", { method: "POST", body: form });
+      const res  = await fetch("/api/parse-pdf", { method: "POST", body });
       const data: ParseResult = await res.json();
-
-      if (!res.ok) {
-        setApiError(data.error ?? "Parser returned an error.");
-      } else {
-        setResult(data);
-      }
+      if (!res.ok) setApiError(data.error ?? "Parser returned an error.");
+      else         setResult(data);
     } catch {
       setApiError("Could not reach the server. Make sure the dev server is running.");
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    const form = new FormData();
+    form.append("file", file);
+    await submit(form);
   };
 
-  const fields = result?.extracted_fields ?? {};
+  const handleTextSubmit = async () => {
+    if (!manualText.trim()) return;
+    setFileName("");
+    const form = new FormData();
+    form.append("text", manualText);
+    await submit(form);
+  };
+
+  const downloadJson = () => {
+    if (!result?.llm_extracted) return;
+    const blob = new Blob([JSON.stringify(result.llm_extracted, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = fileName ? `${fileName.replace(".pdf", "")}_extracted.json` : "wire_extracted.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const fields    = result?.extracted_fields ?? {};
   const hasFields = FIELD_ORDER.some((k) => fields[k]);
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#f8fafc",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      }}
-    >
+    <main style={{
+      minHeight: "100vh", background: "#f8fafc",
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    }}>
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
 
         {/* ── Header ── */}
-        <div style={{ marginBottom: "1.75rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827", margin: "0 0 0.3rem", letterSpacing: "-0.01em" }}>
-            KeyReady Wire Instruction Parser
-          </h1>
-          <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: 0 }}>
-            Upload a wire instruction PDF to extract and verify its key fields.
-          </p>
+        <div style={{ marginBottom: "1.75rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#111827", margin: "0 0 0.3rem", letterSpacing: "-0.01em" }}>
+              KeyReady Wire Instruction Parser
+            </h1>
+            <p style={{ color: "#6b7280", fontSize: "0.875rem", margin: 0 }}>
+              Upload a PDF or paste text — Claude extracts and verifies all wire fields.
+            </p>
+          </div>
+          {result?.llm_extracted && (
+            <button
+              onClick={downloadJson}
+              style={{
+                flexShrink: 0, marginLeft: "1rem",
+                background: "#4f46e5", color: "#fff",
+                border: "none", borderRadius: "8px",
+                padding: "0.5rem 1rem", fontSize: "0.8rem",
+                fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "0.4rem",
+              }}
+            >
+              ↓ Download JSON
+            </button>
+          )}
         </div>
 
         {/* ── Input Card ── */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: "16px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-            padding: "1.75rem",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <div style={{
+          background: "#fff", borderRadius: "16px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          padding: "1.75rem", marginBottom: "1.5rem",
+        }}>
           {/* PDF upload */}
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", fontWeight: 600, fontSize: "0.875rem", color: "#111827", marginBottom: "0.5rem" }}>
@@ -246,42 +349,53 @@ export default function WireParserPage() {
             <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
           </div>
 
-          {/* Textarea (display-only — no Python call for raw text) */}
+          {/* Text input */}
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "0.875rem", color: "#111827", marginBottom: "0.5rem" }}>
-              Paste Wire Instruction Text{" "}
-              <span style={{ fontWeight: 400, color: "#9ca3af", fontSize: "0.8rem" }}>(for reference only)</span>
+              Paste Wire Instruction Text
             </label>
             <textarea
               value={manualText}
               onChange={(e) => setManualText(e.target.value)}
               placeholder="Paste the full text of your wire instruction document here…"
               rows={6}
+              disabled={loading}
               style={{
-                width: "100%",
-                padding: "0.75rem 1rem",
-                border: "1.5px solid #d1d5db",
-                borderRadius: "8px",
-                fontFamily: "ui-monospace, monospace",
-                fontSize: "0.83rem",
-                color: "#374151",
-                lineHeight: "1.6",
-                resize: "vertical",
-                boxSizing: "border-box",
-                outline: "none",
-                transition: "border-color 0.15s",
+                width: "100%", padding: "0.75rem 1rem",
+                border: "1.5px solid #d1d5db", borderRadius: "8px",
+                fontFamily: "ui-monospace, monospace", fontSize: "0.83rem",
+                color: "#374151", lineHeight: "1.6", resize: "vertical",
+                boxSizing: "border-box", outline: "none", transition: "border-color 0.15s",
+                opacity: loading ? 0.6 : 1,
               }}
               onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-              onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+              onBlur={(e)  => (e.target.style.borderColor = "#d1d5db")}
             />
+            <button
+              onClick={handleTextSubmit}
+              disabled={loading || !manualText.trim()}
+              style={{
+                marginTop: "0.75rem",
+                background: loading || !manualText.trim() ? "#e5e7eb" : "#4f46e5",
+                color: loading || !manualText.trim() ? "#9ca3af" : "#fff",
+                border: "none", borderRadius: "8px",
+                padding: "0.55rem 1.25rem", fontSize: "0.875rem",
+                fontWeight: 600, cursor: loading || !manualText.trim() ? "not-allowed" : "pointer",
+                transition: "background 0.15s",
+              }}
+            >
+              Analyze Text
+            </button>
           </div>
 
-          {/* Loading */}
           {loading && <Spinner />}
 
-          {/* API error */}
           {apiError && (
-            <p style={{ marginTop: "1rem", color: "#dc2626", fontSize: "0.875rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", padding: "0.6rem 0.875rem" }}>
+            <p style={{
+              marginTop: "1rem", color: "#dc2626", fontSize: "0.875rem",
+              background: "#fef2f2", border: "1px solid #fecaca",
+              borderRadius: "6px", padding: "0.6rem 0.875rem",
+            }}>
               {apiError}
             </p>
           )}
@@ -290,9 +404,12 @@ export default function WireParserPage() {
         {/* ── Results ── */}
         {result && !loading && (
           <div>
-            {/* Parsing errors from Python */}
+            {/* Parser warnings */}
             {result.parsing_errors && result.parsing_errors.length > 0 && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "1rem 1.25rem", marginBottom: "1rem" }}>
+              <div style={{
+                background: "#fef2f2", border: "1px solid #fecaca",
+                borderRadius: "10px", padding: "1rem 1.25rem", marginBottom: "1rem",
+              }}>
                 <p style={{ fontWeight: 600, fontSize: "0.85rem", color: "#991b1b", margin: "0 0 0.4rem" }}>
                   Parser warnings
                 </p>
@@ -302,44 +419,34 @@ export default function WireParserPage() {
               </div>
             )}
 
+            {/* Risk score card */}
+            {result.domain_verification && result.domain_verification.domain && (
+              <RiskScoreCard dv={result.domain_verification} />
+            )}
+
             {/* Extracted fields */}
             {hasFields && (
-              <div
-                style={{
-                  background: "#fff",
-                  borderRadius: "16px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
-                  overflow: "hidden",
-                  marginBottom: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "1rem 1.5rem",
-                    borderBottom: "1px solid #f1f5f9",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
+              <div style={{
+                background: "#fff", borderRadius: "16px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+                overflow: "hidden", marginBottom: "1rem",
+              }}>
+                <div style={{
+                  padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
                   <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#111827" }}>
                     Extracted Fields
                   </span>
                   <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
-                    {fileName}
+                    {fileName || "pasted text"}
                   </span>
                 </div>
                 <div style={{ padding: "0.25rem 1.5rem 0.75rem" }}>
                   {FIELD_ORDER.map((key) => {
                     const field = fields[key];
                     if (!field) return null;
-                    return (
-                      <FieldRow
-                        key={key}
-                        label={FIELD_LABELS[key]}
-                        field={field}
-                      />
-                    );
+                    return <FieldRow key={key} label={FIELD_LABELS[key]} field={field} />;
                   })}
                 </div>
               </div>
@@ -349,45 +456,31 @@ export default function WireParserPage() {
             {result.bank_name_verification &&
               result.bank_name_verification.status !== "skipped" && (() => {
                 const bv = result.bank_name_verification!;
-                const isMatch   = bv.match === true;
-                const isMiss    = bv.match === false;
-                const unknown   = bv.match === null;
+                const isMatch = bv.match === true;
+                const isMiss  = bv.match === false;
+                const unknown = bv.match === null;
                 const borderColor = isMatch ? "#16a34a" : isMiss ? "#dc2626" : "#d97706";
                 const bgColor     = isMatch ? "#f0fdf4"  : isMiss ? "#fef2f2"  : "#fffbeb";
                 const label       = isMatch ? "✓ Match"  : isMiss ? "✗ Mismatch" : "—";
                 const labelColor  = isMatch ? "#15803d"  : isMiss ? "#b91c1c"    : "#92400e";
 
                 return (
-                  <div
-                    style={{
-                      background: "#fff",
-                      borderRadius: "16px",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
-                      overflow: "hidden",
-                      marginBottom: "1rem",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "1rem 1.5rem",
-                        borderBottom: "1px solid #f1f5f9",
-                        fontWeight: 700,
-                        fontSize: "0.9rem",
-                        color: "#111827",
-                      }}
-                    >
+                  <div style={{
+                    background: "#fff", borderRadius: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+                    overflow: "hidden", marginBottom: "1rem",
+                  }}>
+                    <div style={{
+                      padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+                      fontWeight: 700, fontSize: "0.9rem", color: "#111827",
+                    }}>
                       Bank Name Verification
                     </div>
-                    <div
-                      style={{
-                        padding: "1rem 1.5rem",
-                        background: bgColor,
-                        borderLeft: `4px solid ${borderColor}`,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.6rem",
-                      }}
-                    >
+                    <div style={{
+                      padding: "1rem 1.5rem", background: bgColor,
+                      borderLeft: `4px solid ${borderColor}`,
+                      display: "flex", flexDirection: "column", gap: "0.6rem",
+                    }}>
                       <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "0.75rem" }}>
                         <span style={{ fontSize: "0.8rem", color: "#6b7280", fontWeight: 500 }}>Routing number bank</span>
                         <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#111827" }}>
@@ -403,15 +496,7 @@ export default function WireParserPage() {
                       {!unknown && (
                         <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "0.75rem" }}>
                           <span style={{ fontSize: "0.8rem", color: "#6b7280", fontWeight: 500 }}>Result</span>
-                          <span
-                            style={{
-                              fontSize: "0.875rem",
-                              fontWeight: 700,
-                              color: labelColor,
-                            }}
-                          >
-                            {label}
-                          </span>
+                          <span style={{ fontSize: "0.875rem", fontWeight: 700, color: labelColor }}>{label}</span>
                         </div>
                       )}
                     </div>
@@ -419,42 +504,47 @@ export default function WireParserPage() {
                 );
               })()}
 
+            {/* Raw JSON output (collapsible) */}
+            {result.llm_extracted && (
+              <details style={{
+                background: "#fff", borderRadius: "12px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: "1rem",
+              }}>
+                <summary style={{
+                  padding: "0.875rem 1.25rem", cursor: "pointer",
+                  fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
+                }}>
+                  Raw extracted JSON
+                </summary>
+                <pre style={{
+                  margin: 0, padding: "1rem 1.25rem 1.25rem",
+                  fontSize: "0.72rem", color: "#374151", background: "#f8fafc",
+                  whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
+                  fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
+                }}>
+                  {JSON.stringify(result.llm_extracted, null, 2)}
+                </pre>
+              </details>
+            )}
+
             {/* Document text snippet */}
             {result.document_text_snippet && (
-              <details
-                style={{
-                  background: "#fff",
-                  borderRadius: "12px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                  overflow: "hidden",
-                }}
-              >
-                <summary
-                  style={{
-                    padding: "0.875rem 1.25rem",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#6b7280",
-                    userSelect: "none",
-                  }}
-                >
+              <details style={{
+                background: "#fff", borderRadius: "12px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden",
+              }}>
+                <summary style={{
+                  padding: "0.875rem 1.25rem", cursor: "pointer",
+                  fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
+                }}>
                   Document text snippet
                 </summary>
-                <pre
-                  style={{
-                    margin: 0,
-                    padding: "1rem 1.25rem 1.25rem",
-                    fontSize: "0.75rem",
-                    color: "#6b7280",
-                    background: "#f8fafc",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                    lineHeight: "1.7",
-                    fontFamily: "ui-monospace, monospace",
-                    borderTop: "1px solid #f1f5f9",
-                  }}
-                >
+                <pre style={{
+                  margin: 0, padding: "1rem 1.25rem 1.25rem",
+                  fontSize: "0.75rem", color: "#6b7280", background: "#f8fafc",
+                  whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
+                  fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
+                }}>
                   {result.document_text_snippet}
                 </pre>
               </details>

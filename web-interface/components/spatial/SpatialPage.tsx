@@ -40,7 +40,7 @@ export default function SpatialPage() {
         className="fixed inset-0"
         style={{
           zIndex: 0,
-          background: "linear-gradient(135deg, #F0F2F7 0%, #F8F9FB 55%, #EBF0F5 100%)",
+          background: "radial-gradient(circle at center, #ffffff 0%, #eef1f6 45%, #d4dde9 75%, #b8c6d6 100%)",
         }}
       />
 
@@ -62,7 +62,7 @@ export default function SpatialPage() {
       <div
         ref={canvasRef}
         className="fixed inset-0"
-        style={{ zIndex: 2, willChange: "opacity, transform" }}
+        style={{ zIndex: 2, willChange: "opacity, transform", backgroundColor: "transparent" }}
       >
         <HouseScene />
       </div>

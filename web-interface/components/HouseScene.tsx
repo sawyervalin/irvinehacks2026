@@ -5,7 +5,11 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
-// ─── Wireframe hologram house ─────────────────────────────────────────────────
+// Shield geometry constants — used for collision detection in ThreatArrow
+const SHIELD_CENTER = new THREE.Vector3(0, 0.55, 0);
+const SHIELD_RADIUS = 1.48; // slightly inside the 1.55 XZ scale of the icosahedron
+
+// ─── Solid simulation house ───────────────────────────────────────────────────
 function HouseModel() {
   const { scene } = useGLTF("/models/house.glb");
 
@@ -56,24 +60,21 @@ function HouseModel() {
     });
 
     // Material name → solid architectural color
-    // Keys match the GLB's embedded material names exactly.
-    // Each mesh gets its own material instance (not shared) so colors are independent.
     const MAT_PALETTE: Record<string, { color: string; roughness: number }> = {
-      foundation_brown_brick: { color: "#1C4C70", roughness: 0.62 }, // dark navy  — base/foundation
-      glass_window:           { color: "#9BA8BB", roughness: 0.28 }, // neutral gray — window panes
-      metal_dark_brown:       { color: "#1C4C70", roughness: 0.55 }, // dark navy  — dark metal
-      metal_grey:             { color: "#9BA8BB", roughness: 0.50 }, // neutral gray — metal trim
-      plaster_light_brown:    { color: "#E8EEF5", roughness: 0.65 }, // off white  — walls
-      plaster_sand:           { color: "#E8EEF5", roughness: 0.68 }, // off white  — walls
-      plate_grey:             { color: "#9BA8BB", roughness: 0.48 }, // neutral gray — plates
-      wood_balls_brown:       { color: "#4B7BA7", roughness: 0.60 }, // soft green  — decorative
-      wood_brown:             { color: "#4B7BA7", roughness: 0.62 }, // steel blue  — secondary wood
+      foundation_brown_brick: { color: "#1C4C70", roughness: 0.62 },
+      glass_window:           { color: "#9BA8BB", roughness: 0.28 },
+      metal_dark_brown:       { color: "#1C4C70", roughness: 0.55 },
+      metal_grey:             { color: "#9BA8BB", roughness: 0.50 },
+      plaster_light_brown:    { color: "#E8EEF5", roughness: 0.65 },
+      plaster_sand:           { color: "#E8EEF5", roughness: 0.68 },
+      plate_grey:             { color: "#9BA8BB", roughness: 0.48 },
+      wood_balls_brown:       { color: "#4B7BA7", roughness: 0.60 },
+      wood_brown:             { color: "#4B7BA7", roughness: 0.62 },
     };
     const FALLBACK = { color: "#9BA8BB", roughness: 0.55 };
 
     clone.traverse(child => {
       if (!(child instanceof THREE.Mesh)) return;
-
       const mats = Array.isArray(child.material) ? child.material : [child.material];
       const newMats = mats.map(mat => {
         const name = (mat as THREE.Material).name ?? "";
@@ -86,7 +87,6 @@ function HouseModel() {
           transparent: false,
         });
       });
-
       child.material = newMats.length === 1 ? newMats[0] : newMats;
       child.castShadow = false;
       child.receiveShadow = false;
@@ -98,27 +98,54 @@ function HouseModel() {
   return <primitive object={processed} />;
 }
 
-// ─── AI Shield — thin wireframe boundary ──────────────────────────────────────
-function AIShield({ hovered }: { hovered: boolean }) {
-  const ref = useRef<THREE.Mesh>(null!);
+// ─── AI Shield — thin wireframe boundary with absorption pulse ────────────────
+function AIShield({
+  hovered,
+  impactTimeRef,
+}: {
+  hovered: boolean;
+  impactTimeRef: React.RefObject<number>;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null!);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null!);
   const t = useRef(0);
+
+  // Base scale values (never changed)
+  const BASE_SCALE: [number, number, number] = [1.55, 1.82, 1.55];
 
   useFrame((_, delta) => {
     t.current += delta;
-    ref.current.rotation.y += delta * 0.09;
-    ref.current.rotation.x = Math.sin(t.current * 0.2) * 0.04;
+    meshRef.current.rotation.y += delta * 0.09;
+    meshRef.current.rotation.x = Math.sin(t.current * 0.2) * 0.04;
+
+    // Absorption pulse: triggered by impactTimeRef
+    const PULSE_DURATION = 0.28; // seconds
+    const timeSinceImpact = (Date.now() - impactTimeRef.current) / 1000;
+    const baseOpacity = hovered ? 0.18 : 0.11;
+
+    if (timeSinceImpact < PULSE_DURATION) {
+      // Bell curve: 0 → peak → 0 over PULSE_DURATION
+      const pulse = Math.sin((timeSinceImpact / PULSE_DURATION) * Math.PI);
+      // Subtle scale ripple: max +4%
+      const sf = 1 + pulse * 0.04;
+      meshRef.current.scale.set(BASE_SCALE[0] * sf, BASE_SCALE[1] * sf, BASE_SCALE[2] * sf);
+      // Brief opacity spike
+      matRef.current.opacity = baseOpacity + pulse * 0.14;
+    } else {
+      meshRef.current.scale.set(...BASE_SCALE);
+      matRef.current.opacity = baseOpacity;
+    }
   });
 
-  const opacity = hovered ? 0.08 : 0.04;
-
   return (
-    <mesh ref={ref} scale={[1.55, 1.82, 1.55]} position={[0, 0.55, 0]}>
+    <mesh ref={meshRef} scale={BASE_SCALE} position={[0, 0.55, 0]}>
       <icosahedronGeometry args={[1, 1]} />
       <meshBasicMaterial
+        ref={matRef}
         color="#4B7BA7"
         wireframe
         transparent
-        opacity={opacity}
+        opacity={0.11}
       />
     </mesh>
   );
@@ -152,20 +179,33 @@ function PulseRing({ index }: { index: number }) {
   );
 }
 
-// ─── Threat arrow ─────────────────────────────────────────────────────────────
-function ThreatArrow({ startPos, targetPos, onDone }: {
+// ─── Threat arrow — with bounce physics on shield collision ───────────────────
+function ThreatArrow({
+  startPos,
+  targetPos,
+  onDone,
+  onImpact,
+}: {
   startPos: [number, number, number];
   targetPos: [number, number, number];
   onDone: () => void;
+  onImpact: () => void;
 }) {
-  const groupRef = useRef<THREE.Group>(null!);
+  const arrowRef = useRef<THREE.Group>(null!);
   const progress = useRef(0);
   const dead = useRef(false);
-  const opacity = useRef(1);
+  const opacityVal = useRef(1);
+
+  // Phase state machine: approach → bounce → fade
+  const phase = useRef<'approach' | 'bounce' | 'fade'>('approach');
+  const bouncePos = useRef(new THREE.Vector3());
+  const bounceVel = useRef(new THREE.Vector3());
+  const bounceTimer = useRef(0);
 
   const [sx, sy, sz] = startPos;
   const [tx, ty, tz] = targetPos;
 
+  // Quaternion: rotate local +Y to face the target direction
   const quaternion = useMemo(() => {
     const dir = new THREE.Vector3(tx - sx, ty - sy, tz - sz).normalize();
     return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
@@ -173,28 +213,66 @@ function ThreatArrow({ startPos, targetPos, onDone }: {
 
   useFrame((_, delta) => {
     if (dead.current) return;
-    progress.current += delta * 0.40;
-    const t = Math.min(progress.current, 1);
-    const ease = t * t * (3 - 2 * t);
-    groupRef.current.position.set(
-      THREE.MathUtils.lerp(sx, tx, ease),
-      THREE.MathUtils.lerp(sy, ty, ease),
-      THREE.MathUtils.lerp(sz, tz, ease)
-    );
 
-    if (t >= 0.90) {
-      opacity.current = Math.max(0, opacity.current - delta * 6);
-      groupRef.current.traverse(child => {
+    if (phase.current === 'approach') {
+      progress.current += delta * 0.40;
+      const t = Math.min(progress.current, 1);
+      const ease = t * t * (3 - 2 * t);
+
+      const px = THREE.MathUtils.lerp(sx, tx, ease);
+      const py = THREE.MathUtils.lerp(sy, ty, ease);
+      const pz = THREE.MathUtils.lerp(sz, tz, ease);
+      arrowRef.current.position.set(px, py, pz);
+
+      // Collision: distance from arrow to shield center in shared local space
+      const dx = px - SHIELD_CENTER.x;
+      const dy = py - SHIELD_CENTER.y;
+      const dz = pz - SHIELD_CENTER.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (dist <= SHIELD_RADIUS || t >= 1) {
+        // Switch to bounce phase
+        phase.current = 'bounce';
+        bouncePos.current.set(px, py, pz);
+
+        // Bounce velocity: reverse incoming direction at 0.55 units/s
+        const incomingDir = new THREE.Vector3(tx - sx, ty - sy, tz - sz).normalize();
+        bounceVel.current.copy(incomingDir).multiplyScalar(-0.55);
+
+        bounceTimer.current = 0;
+        onImpact(); // notify shield
+      }
+
+    } else if (phase.current === 'bounce') {
+      bounceTimer.current += delta;
+
+      // Frame-rate-independent exponential damping (coefficient = 5/s)
+      const damping = Math.max(0, 1 - 5 * delta);
+      bounceVel.current.multiplyScalar(damping);
+      bouncePos.current.addScaledVector(bounceVel.current, delta);
+      arrowRef.current.position.copy(bouncePos.current);
+
+      // Bounce duration: 0.25s, then fade
+      if (bounceTimer.current >= 0.25) {
+        phase.current = 'fade';
+      }
+
+    } else if (phase.current === 'fade') {
+      opacityVal.current = Math.max(0, opacityVal.current - delta * 5);
+      arrowRef.current.traverse(child => {
         if (child instanceof THREE.Mesh) {
-          (child.material as THREE.MeshStandardMaterial).opacity = opacity.current;
+          (child.material as THREE.MeshStandardMaterial).opacity = opacityVal.current;
         }
       });
-      if (opacity.current <= 0) { dead.current = true; onDone(); }
+      if (opacityVal.current <= 0) {
+        dead.current = true;
+        onDone();
+      }
     }
   });
 
   return (
-    <group ref={groupRef} position={startPos} quaternion={quaternion}>
+    <group ref={arrowRef} position={startPos} quaternion={quaternion}>
       {/* Cone tip — leading edge pointing toward target */}
       <mesh position={[0, 0.11, 0]}>
         <coneGeometry args={[0.026, 0.085, 6]} />
@@ -222,15 +300,25 @@ function ThreatArrow({ startPos, targetPos, onDone }: {
 }
 
 // ─── Threat spawner ───────────────────────────────────────────────────────────
-function Threats() {
-  const [list, setList] = useState<{ id: number; angle: number; done: boolean }[]>([]);
+function Threats({ onImpact }: { onImpact: () => void }) {
+  const [list, setList] = useState<{
+    id: number;
+    startPos: [number, number, number];
+    targetPos: [number, number, number];
+  }[]>([]);
   const nextId = useRef(0);
 
   useEffect(() => {
     const iv = setInterval(() => {
       setList(prev => {
-        if (prev.filter(t => !t.done).length >= 3) return prev;
-        return [...prev, { id: nextId.current++, angle: Math.random() * Math.PI * 2, done: false }];
+        if (prev.length >= 3) return prev;
+        // Positions computed once here — never recalculated on re-render
+        const angle = Math.random() * Math.PI * 2;
+        const d = 2.6;
+        const sy = 0.6 + Math.random() * 0.8;
+        const startPos: [number, number, number] = [Math.cos(angle) * d, sy, Math.sin(angle) * d];
+        const targetPos: [number, number, number] = [Math.cos(angle) * 1.3, sy * 0.5, Math.sin(angle) * 1.3];
+        return [...prev, { id: nextId.current++, startPos, targetPos }];
       });
     }, 1400);
     return () => clearInterval(iv);
@@ -238,19 +326,15 @@ function Threats() {
 
   return (
     <>
-      {list.filter(t => !t.done).map(t => {
-        const d = 2.6;
-        const sp: [number, number, number] = [Math.cos(t.angle) * d, 0.6 + Math.random() * 0.8, Math.sin(t.angle) * d];
-        const ep: [number, number, number] = [Math.cos(t.angle) * 1.3, sp[1] * 0.5, Math.sin(t.angle) * 1.3];
-        return (
-          <ThreatArrow
-            key={t.id}
-            startPos={sp}
-            targetPos={ep}
-            onDone={() => setList(prev => prev.map(p => p.id === t.id ? { ...p, done: true } : p))}
-          />
-        );
-      })}
+      {list.map(t => (
+        <ThreatArrow
+          key={t.id}
+          startPos={t.startPos}
+          targetPos={t.targetPos}
+          onImpact={onImpact}
+          onDone={() => setList(prev => prev.filter(p => p.id !== t.id))}
+        />
+      ))}
     </>
   );
 }
@@ -343,8 +427,13 @@ function Scene({ scrollY }: { scrollY: number }) {
   const groupRef = useRef<THREE.Group>(null!);
   const t = useRef(0);
 
+  // Shared impact timestamp — written by ThreatArrow, read by AIShield
+  const impactTimeRef = useRef<number>(0);
+  const handleImpact = () => { impactTimeRef.current = Date.now(); };
+
   useFrame((_, delta) => {
-    t.current += delta;
+    const safeDelta = Math.min(delta, 0.1); // cap: prevents jump when returning from inactive tab
+    t.current += safeDelta;
     groupRef.current.rotation.y = t.current * 0.08 + scrollY * 0.0008;
 
     // Scroll-based y-drift + scale from DOM
@@ -356,11 +445,11 @@ function Scene({ scrollY }: { scrollY: number }) {
     groupRef.current.position.y = THREE.MathUtils.lerp(
       groupRef.current.position.y,
       sp * 0.5,
-      delta * 2
+      safeDelta * 2
     );
     const targetScale = 1 - sp * 0.10;
     groupRef.current.scale.setScalar(
-      THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, delta * 2)
+      THREE.MathUtils.lerp(groupRef.current.scale.x, targetScale, safeDelta * 2)
     );
   });
 
@@ -372,8 +461,8 @@ function Scene({ scrollY }: { scrollY: number }) {
       <pointLight position={[3, 2, 3]} color="#6B8FC4" intensity={0.4} distance={6} />
       <pointLight position={[-3, 1, -3]} color="#A8B5C8" intensity={0.25} distance={5} />
 
-      {/* Outer group applies uniform 5% scale to the entire simulation */}
-      <group scale={[0.95, 0.95, 0.95]}>
+      {/* Outer group: 5% scale reduction + X offset to clear hero text */}
+      <group scale={[0.95, 0.95, 0.95]} position={[0.55, -0.5, 0]}>
         <Float speed={1.0} rotationIntensity={0.08} floatIntensity={0.30}>
           <group
             ref={groupRef}
@@ -383,8 +472,8 @@ function Scene({ scrollY }: { scrollY: number }) {
             <Suspense fallback={<HouseFallback />}>
               <HouseModel />
             </Suspense>
-            <AIShield hovered={hovered} />
-            <Threats />
+            <AIShield hovered={hovered} impactTimeRef={impactTimeRef} />
+            <Threats onImpact={handleImpact} />
             <VerifyPulses />
           </group>
         </Float>
@@ -399,11 +488,15 @@ function Scene({ scrollY }: { scrollY: number }) {
 // ─── Export ───────────────────────────────────────────────────────────────────
 export default function HouseScene({ scrollY = 0 }: { scrollY?: number }) {
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ background: "transparent" }}>
       <Canvas
         camera={{ position: [0, 1.2, 4.5], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 1.5]}
+        onCreated={({ gl, scene }) => {
+          gl.setClearColor(0x000000, 0); // fully transparent clear
+          scene.background = null;       // no Three.js background fill
+        }}
       >
         <Scene scrollY={scrollY} />
       </Canvas>

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Space_Mono } from "next/font/google";
+import { Fredoka, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const spaceGrotesk = Fredoka({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const spaceMono = Space_Mono({
+const spaceMono = Nunito_Sans({
   variable: "--font-geist-mono",
   subsets: ["latin"],
   weight: ["400", "700"],

@@ -25,11 +25,15 @@
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
+  background: radial-gradient(circle at center, #ffffff 0%, #eef1f6 45%, #d4dde9 75%, #b8c6d6 100%) fixed;
+}
 
 body {
-  background: #F8F9FB;
-  background-attachment: fixed;
+  min-height: 100%;
+  background: transparent; /* gradient lives on html; body stays clear so fixed divs show */
   color: var(--text);
   font-family: var(--font-geist-sans), -apple-system, sans-serif;
   letter-spacing: -0.01em;

@@ -25,7 +25,7 @@ export default function DashboardShell({
   primaryDisabled = false
 }: DashboardShellProps) {
   const pathname = usePathname();
-  const isAddData = pathname === "/";
+  const isAddData = pathname.startsWith("/threat-check");
   const isThreatSummary = pathname.startsWith("/threat-summary");
   const currentStep = isThreatSummary ? 2 : 1;
 
@@ -49,7 +49,7 @@ export default function DashboardShell({
 
           <nav className={styles.timeline} aria-label="Workflow steps">
             <Link
-              href="/"
+              href="/threat-check"
               className={styles.timelineStep}
               aria-current={isAddData ? "step" : undefined}
             >

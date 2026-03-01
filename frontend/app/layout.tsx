@@ -21,8 +21,15 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Threat Check Workflow",
-  description: "Upload and process extension, manual, and PDF data for threat checks.",
+  title: "HomeGuard AI — Protect Your First Home Before You Wire a Dollar",
+  description:
+    "AI-powered fraud detection built specifically for first-time home buyers. Scan wire instructions, emails, and PDFs before you lose everything.",
+  keywords: "wire fraud, real estate fraud, home buyer protection, AI fraud detection, closing scam",
+  openGraph: {
+    title: "HomeGuard AI",
+    description: "Don't wire a dollar without scanning it first.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

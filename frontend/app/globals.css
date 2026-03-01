@@ -1,20 +1,87 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --background: #8cce91;
-  --foreground: #1b2c1d;
+  --bg:           #F8F9FB;
+  --surface:      #F0F2F7;
+  --sand:         #E8ECEF;
+  --text:         #1A2540;
+  --text-muted:   #5A6B80;
+  --accent:       #1C4C70;
+  --accent-light: #4B7BA7;
+  --accent-green: #7AA85C;
+  --red:          #C75555;
+  --glass:        rgba(248, 249, 251, 0.92);
+  --glass-border: rgba(28, 76, 112, 0.08);
+  --font-geist-sans: var(--font-body);
+  --font-geist-mono: var(--font-mono);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
-  --font-mono: var(--font-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans:        var(--font-geist-sans);
+  --font-mono:        var(--font-geist-mono);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100%;
+  background: radial-gradient(circle at center, #ffffff 0%, #eef1f6 45%, #d4dde9 75%, #b8c6d6 100%) fixed;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-body), sans-serif;
-  margin: 0;
+  min-height: 100%;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-geist-sans), -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(75, 123, 167, 0.22); border-radius: 1px; }
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.carousel-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.carousel-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 64px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.90) !important;
+}
+
+@keyframes scan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
+
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(75, 123, 167, 0.12), transparent);
+  animation: scan 24s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
 }

@@ -193,19 +193,6 @@ export default function HomePage() {
         const hasManualInput = manualData.trim().length > 0;
 
         if (hasManualInput) {
-            let parsed: unknown;
-            try {
-                parsed = JSON.parse(manualData);
-            } catch {
-                setStatus("Manual data must be valid JSON before running checks.");
-                return;
-            }
-
-            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-                setStatus("Manual data must be a JSON object before running checks.");
-                return;
-            }
-
             const senderAddressValue = senderAddress.trim();
             if (!senderAddressValue) {
                 setStatus("Email sender address is required when manual data is provided.");
@@ -213,7 +200,7 @@ export default function HomePage() {
             }
 
             manualPayload = {
-                ...(parsed as Record<string, unknown>),
+                emailBody: manualData,
                 senderAddress: senderAddressValue
             };
         }
@@ -347,7 +334,7 @@ export default function HomePage() {
                 <textarea
                   value={manualData}
                   onChange={(event) => setManualData(event.target.value)}
-                  placeholder='Paste email data here'
+                  placeholder="Paste the email text here (subject, body, headers — anything you received)"
                   rows={8}
                   className={styles.textArea}
                 />

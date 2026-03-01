@@ -38,6 +38,7 @@ interface ParseResult {
   document_text_snippet?: string;
   extracted_fields?: Record<string, AnyField>;
   llm_extracted?: Record<string, unknown>;
+  hackathon_schema?: Record<string, unknown>;
   bank_name_verification?: BankVerification;
   domain_verification?: DomainVerification;
   parsing_errors?: string[];
@@ -267,8 +268,9 @@ export default function WireParserPage() {
   };
 
   const downloadJson = () => {
-    if (!result?.llm_extracted) return;
-    const blob = new Blob([JSON.stringify(result.llm_extracted, null, 2)], { type: "application/json" });
+    const payload = result?.hackathon_schema ?? result?.llm_extracted;
+    if (!payload) return;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
     a.href     = url;
@@ -504,8 +506,127 @@ export default function WireParserPage() {
                 );
               })()}
 
-            {/* Raw JSON output (collapsible) */}
-            {result.llm_extracted && (
+            {/* Risk Assessment card (wire-doc.hack.v1) */}
+            {(() => {
+              const hs = result.hackathon_schema as Record<string, unknown> | undefined;
+              const ra = hs?.risk_assessment as {
+                bucket_scores: { content: number; banking: number; domain: number };
+                overall_risk_score: number;
+                risk_tier: "low" | "medium" | "high" | "critical";
+                triggered_rules: { id: string; bucket: string; points: number; evidence: Record<string, unknown> }[];
+                recommended_actions: string[];
+              } | undefined;
+              if (!ra) return null;
+
+              const tierPalette: Record<string, { bg: string; border: string; badge: string; text: string; label: string }> = {
+                low:      { bg: "#f0fdf4", border: "#16a34a", badge: "#dcfce7", text: "#15803d", label: "LOW" },
+                medium:   { bg: "#fffbeb", border: "#d97706", badge: "#fef3c7", text: "#92400e", label: "MEDIUM" },
+                high:     { bg: "#fff7ed", border: "#ea580c", badge: "#ffedd5", text: "#9a3412", label: "HIGH" },
+                critical: { bg: "#fef2f2", border: "#dc2626", badge: "#fee2e2", text: "#991b1b", label: "CRITICAL" },
+              };
+              const pal = tierPalette[ra.risk_tier] ?? tierPalette.medium;
+
+              const bucketColor = (score: number) =>
+                score >= 75 ? "#dc2626" : score >= 50 ? "#ea580c" : score >= 25 ? "#d97706" : "#16a34a";
+
+              return (
+                <div style={{
+                  background: "#fff", borderRadius: "16px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
+                  overflow: "hidden", marginBottom: "1rem",
+                  borderTop: `4px solid ${pal.border}`,
+                }}>
+                  {/* Header */}
+                  <div style={{
+                    padding: "1rem 1.5rem", borderBottom: "1px solid #f1f5f9",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                  }}>
+                    <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#111827" }}>
+                      Fraud Risk Assessment
+                    </span>
+                    <span style={{
+                      fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em",
+                      padding: "0.25rem 0.75rem", borderRadius: "999px",
+                      background: pal.badge, color: pal.text,
+                    }}>
+                      {pal.label}
+                    </span>
+                  </div>
+
+                  {/* Score + buckets */}
+                  <div style={{ padding: "1.25rem 1.5rem", background: pal.bg }}>
+                    {/* Overall score */}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "1.25rem" }}>
+                      <span style={{ fontSize: "3rem", fontWeight: 800, color: pal.text, lineHeight: 1 }}>
+                        {ra.overall_risk_score}
+                      </span>
+                      <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>/ 100 overall score</span>
+                    </div>
+
+                    {/* Bucket bars */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                      {(["content", "banking", "domain"] as const).map((b) => {
+                        const score = ra.bucket_scores[b];
+                        const color = bucketColor(score);
+                        return (
+                          <div key={b} style={{ display: "grid", gridTemplateColumns: "70px 1fr 36px", gap: "0.5rem", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7280", textTransform: "capitalize" }}>{b}</span>
+                            <div style={{ background: "#e5e7eb", borderRadius: "999px", height: "6px", overflow: "hidden" }}>
+                              <div style={{ width: `${score}%`, height: "100%", background: color, borderRadius: "999px", transition: "width 0.4s" }} />
+                            </div>
+                            <span style={{ fontSize: "0.72rem", fontWeight: 700, color, textAlign: "right" }}>{score}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Triggered rules */}
+                  {ra.triggered_rules.length > 0 && (
+                    <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9" }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#374151", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        Triggered Rules
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                        {ra.triggered_rules.map((rule, i) => (
+                          <div key={i} style={{
+                            display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                            padding: "0.5rem 0.75rem", borderRadius: "8px", background: "#f8fafc",
+                          }}>
+                            <span style={{
+                              fontSize: "0.65rem", fontWeight: 700, padding: "0.15rem 0.5rem",
+                              borderRadius: "4px", background: "#e5e7eb", color: "#374151",
+                              whiteSpace: "nowrap", marginTop: "1px",
+                            }}>{rule.bucket.toUpperCase()}</span>
+                            <span style={{ fontSize: "0.78rem", color: "#374151", flex: 1 }}>
+                              {rule.id.replace(/_/g, " ")}
+                            </span>
+                            <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#dc2626", whiteSpace: "nowrap" }}>
+                              +{rule.points}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommended actions */}
+                  <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid #f1f5f9", background: "#fafafa" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#374151", marginBottom: "0.6rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Recommended Actions
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: "1.25rem", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                      {ra.recommended_actions.map((action, i) => (
+                        <li key={i} style={{ fontSize: "0.82rem", color: "#374151" }}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Hackathon AI Extraction schema (wire-doc.hack.v1) */}
+            {(result.hackathon_schema ?? result.llm_extracted) && (
               <details style={{
                 background: "#fff", borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: "1rem",
@@ -514,7 +635,7 @@ export default function WireParserPage() {
                   padding: "0.875rem 1.25rem", cursor: "pointer",
                   fontSize: "0.8rem", fontWeight: 600, color: "#6b7280", userSelect: "none",
                 }}>
-                  Raw extracted JSON
+                  {result.hackathon_schema ? "AI Extraction JSON (wire-doc.hack.v1)" : "Raw extracted JSON"}
                 </summary>
                 <pre style={{
                   margin: 0, padding: "1rem 1.25rem 1.25rem",
@@ -522,7 +643,7 @@ export default function WireParserPage() {
                   whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: "1.7",
                   fontFamily: "ui-monospace, monospace", borderTop: "1px solid #f1f5f9",
                 }}>
-                  {JSON.stringify(result.llm_extracted, null, 2)}
+                  {JSON.stringify(result.hackathon_schema ?? result.llm_extracted, null, 2)}
                 </pre>
               </details>
             )}

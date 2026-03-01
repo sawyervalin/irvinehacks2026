@@ -18,19 +18,19 @@ export default function HowPanel() {
       className="pointer-events-auto"
       style={{ maxWidth: 320 }}
     >
-      {/* White glass panel */}
       <div
         style={{
           padding: "44px 48px",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          background: "rgba(255,255,255,0.75)",
-          border: "1px solid rgba(14,116,144,0.12)",
+          background: "rgba(248, 247, 244, 0.88)",
+          border: "1px solid rgba(78,127,164,0.1)",
           position: "relative",
           overflow: "hidden",
+          boxShadow: "0 2px 40px rgba(0,0,0,0.06)",
         }}
       >
-        {/* Sky blue ambient glow — bottom left */}
+        {/* Very soft steel blue glow — bottom left */}
         <div
           style={{
             position: "absolute",
@@ -38,20 +38,19 @@ export default function HowPanel() {
             left: -50,
             width: 180,
             height: 180,
-            background: "rgba(14,165,233,0.08)",
+            background: "rgba(78,127,164,0.06)",
             borderRadius: "50%",
             filter: "blur(40px)",
             pointerEvents: "none",
           }}
         />
 
-        {/* Label */}
         <div
           style={{
             fontFamily: "var(--font-geist-mono)",
             fontSize: "9px",
-            letterSpacing: "0.3em",
-            color: "#0EA5E9",
+            letterSpacing: "0.28em",
+            color: "#4E7FA4",
             textTransform: "uppercase",
             marginBottom: 40,
             opacity: 0.8,
@@ -60,7 +59,6 @@ export default function HowPanel() {
           How it works
         </div>
 
-        {/* Steps */}
         <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
           {STEPS.map((step, i) => (
             <motion.div
@@ -75,7 +73,7 @@ export default function HowPanel() {
                 style={{
                   fontFamily: "var(--font-geist-mono)",
                   fontSize: "10px",
-                  color: "rgba(14,165,233,0.45)",
+                  color: "rgba(78,127,164,0.4)",
                   marginTop: 4,
                   userSelect: "none",
                   flexShrink: 0,
@@ -87,8 +85,9 @@ export default function HowPanel() {
                 <div
                   style={{
                     fontSize: "clamp(20px, 2.8vw, 26px)",
-                    fontWeight: 200,
-                    color: "#0C2340",
+                    fontWeight: 300,
+                    letterSpacing: "-0.02em",
+                    color: "#1A1A1A",
                     lineHeight: 1,
                     marginBottom: 6,
                   }}
@@ -99,8 +98,8 @@ export default function HowPanel() {
                   style={{
                     fontSize: "11px",
                     fontWeight: 400,
-                    color: "#475569",
-                    letterSpacing: "0.02em",
+                    color: "#5C606B",
+                    letterSpacing: "0em",
                   }}
                 >
                   {step.sub}
@@ -110,20 +109,19 @@ export default function HowPanel() {
           ))}
         </div>
 
-        {/* Divider + risk meter */}
         <div
           style={{
             marginTop: 44,
             paddingTop: 32,
-            borderTop: "1px solid rgba(14,116,144,0.1)",
+            borderTop: "1px solid rgba(78,127,164,0.08)",
           }}
         >
           <div
             style={{
               fontFamily: "var(--font-geist-mono)",
               fontSize: "9px",
-              letterSpacing: "0.28em",
-              color: "#475569",
+              letterSpacing: "0.26em",
+              color: "#5C606B",
               textTransform: "uppercase",
               marginBottom: 14,
             }}
@@ -132,21 +130,21 @@ export default function HowPanel() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1, height: 1, background: "rgba(14,116,144,0.12)", overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(78,127,164,0.1)", overflow: "hidden" }}>
               <motion.div
                 initial={{ width: "0%" }}
                 whileInView={{ width: "28%" }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.9, duration: 1.4, ease: "easeOut" }}
-                style={{ height: "100%", background: "#0EA5E9" }}
+                style={{ height: "100%", background: "#4E7FA4" }}
               />
             </div>
             <span
               style={{
                 fontFamily: "var(--font-geist-mono)",
                 fontSize: "9px",
-                letterSpacing: "0.22em",
-                color: "#0EA5E9",
+                letterSpacing: "0.2em",
+                color: "#4E7FA4",
                 opacity: 0.7,
               }}
             >

@@ -16,23 +16,23 @@ export default function SpatialPage() {
   return (
     <div className="relative">
 
-      {/* ── White gradient background — canvas is alpha-transparent so this shows ── */}
+      {/* ── Warm architectural background — canvas alpha lets this show through ── */}
       <div
         className="fixed inset-0"
         style={{
           zIndex: 0,
-          background: "linear-gradient(135deg, #DBEAFE 0%, #F0F9FF 40%, #FFFFFF 65%, #FFF7ED 100%)",
+          background: "linear-gradient(135deg, #EDF2F7 0%, #F6F4F0 45%, #F4EFE8 100%)",
         }}
       />
 
-      {/* ── Spatial grid — offset 40px so no line lands on the left/top edge ── */}
+      {/* ── Spatial grid — offset so no line lands on the left/top edge ── */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           zIndex: 1,
           backgroundImage: `
-            linear-gradient(rgba(14, 116, 144, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14, 116, 144, 0.05) 1px, transparent 1px)
+            linear-gradient(rgba(78, 127, 164, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(78, 127, 164, 0.04) 1px, transparent 1px)
           `,
           backgroundSize: "80px 80px",
           backgroundPosition: "40px 40px",
@@ -60,9 +60,9 @@ export default function SpatialPage() {
             fontFamily: "var(--font-geist-mono)",
             fontSize: "11px",
             letterSpacing: "0.22em",
-            color: "#0C2340",
+            color: "#1A1A1A",
             textTransform: "uppercase",
-            opacity: 0.6,
+            opacity: 0.45,
           }}
         >
           HomeGuard
@@ -74,8 +74,8 @@ export default function SpatialPage() {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#F97316",
-              boxShadow: "0 0 8px rgba(249,115,22,0.6)",
+              background: "#4E7FA4",
+              boxShadow: "0 0 8px rgba(78,127,164,0.4)",
               animation: "pulse 2s ease-in-out infinite",
             }}
           />
@@ -84,7 +84,7 @@ export default function SpatialPage() {
               fontFamily: "var(--font-geist-mono)",
               fontSize: "10px",
               letterSpacing: "0.2em",
-              color: "rgba(249,115,22,0.7)",
+              color: "rgba(78,127,164,0.7)",
             }}
           >
             PROTECTED

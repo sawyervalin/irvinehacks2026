@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getLatestBatch } from "../../../../lib/gmailIngestStore";
+import { setLatestThreatResult } from "../../../../lib/threatResultStore";
 
 export const runtime = "nodejs";
 
@@ -44,13 +45,22 @@ export async function POST(request: Request) {
 
     const dummyBackendUrl = process.env.DUMMY_BACKEND_URL || "http://localhost:8000/process";
     try {
-        await fetch(dummyBackendUrl, {
+        const backendResponse = await fetch(dummyBackendUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
         });
+        const contentType = backendResponse.headers.get("content-type") ?? "";
+        if (backendResponse.ok && contentType.includes("application/json")) {
+            const parsed = (await backendResponse.json()) as unknown;
+            setLatestThreatResult({
+                receivedAt: new Date().toISOString(),
+                source: "process",
+                backendResponse: parsed
+            });
+        }
     } catch {
         // Fail silently by design in this prototype.
     }

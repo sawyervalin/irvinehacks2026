@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardShell from "../components/DashboardShell";
 import styles from "../page.module.css";
-
-/* ── Types ──────────────────────────────────────────────────────────────────── */
 
 interface Signal {
   id: string;
   description: string;
   weight: number;
-  triggered?: boolean; // undefined = not yet analyzed, true = flagged, false = clear
+  triggered?: boolean;
 }
 
 interface Tier {
@@ -21,131 +19,41 @@ interface Tier {
 interface ThreatModel {
   model_name: string;
   total_weight: number;
+  score: number;
+  risk_tier: string;
   tiers: Record<string, Tier>;
 }
-
-/* ── Mock data (swap for real API response) ──────────────────────────────────── */
-/*
- * Only signals present in the backend payload are assumed triggered.
- * Score = sum of triggered signal weights.
- * Demo score: 30+10+5+6+4+3 = 58 → HIGH RISK
- */
-
-const MOCK_RESULT: ThreatModel = {
-  model_name: "real_estate_wire_fraud_frontend_v1",
-  total_weight: 100,
-  tiers: {
-    hard_evidence: {
-      tier_weight: 60,
-      signals: [
-        {
-          id: "routing_number_mismatch",
-          description:
-            "Routing number does not match stated bank or fails Federal Reserve verification",
-          weight: 30,
-          triggered: true,
-        },
-        {
-          id: "known_scam_domain",
-          description:
-            "Sender domain matches known scam database or confirmed spoof",
-          weight: 20,
-          triggered: false,
-        },
-        {
-          id: "newly_created_domain",
-          description:
-            "Domain age is recently created and used for financial instruction",
-          weight: 10,
-          triggered: false,
-        },
-      ],
-    },
-    structural_inconsistencies: {
-      tier_weight: 22,
-      signals: [
-        {
-          id: "escrow_name_mismatch",
-          description:
-            "Escrow officer name does not match user-provided or verified records",
-          weight: 10,
-          triggered: true,
-        },
-        {
-          id: "foreign_banking_data",
-          description:
-            "Foreign bank, routing, or phone numbers in domestic transaction",
-          weight: 7,
-          triggered: false,
-        },
-        {
-          id: "suspicious_unicode_characters",
-          description: "Hidden or non-standard Unicode characters detected",
-          weight: 5,
-          triggered: true,
-        },
-      ],
-    },
-    behavioral_linguistic: {
-      tier_weight: 13,
-      signals: [
-        {
-          id: "pressure_language",
-          description:
-            "Urgency phrases such as 'wire immediately' or 'do not call to verify'",
-          weight: 6,
-          triggered: true,
-        },
-        {
-          id: "ai_generated_text",
-          description: "Text exhibits strong indicators of AI generation",
-          weight: 4,
-          triggered: true,
-        },
-        {
-          id: "grammatical_errors",
-          description:
-            "Unusual grammatical patterns or structural writing issues",
-          weight: 2,
-          triggered: false,
-        },
-        {
-          id: "misspellings",
-          description:
-            "Spelling inconsistencies or errors in professional communication",
-          weight: 1,
-          triggered: false,
-        },
-      ],
-    },
-    contextual_supporting: {
-      tier_weight: 5,
-      signals: [
-        {
-          id: "dummy_names",
-          description: "Use of known placeholder names such as John Doe",
-          weight: 2,
-          triggered: false,
-        },
-        {
-          id: "no_online_presence",
-          description:
-            "No verifiable online presence for sender or organization",
-          weight: 3,
-          triggered: true,
-        },
-      ],
-    },
-  },
-};
-
-/* ── Tier display config ─────────────────────────────────────────────────────── */
 
 interface TierCfg {
   label: string;
   color: string;
   bg: string;
   border: string;
+}
+
+interface BackendTriggeredRule {
+  id: string;
+  bucket: string;
+  points: number;
+}
+
+interface BackendRiskAssessment {
+  bucket_scores: Record<string, number>;
+  overall_risk_score: number;
+  risk_tier: string;
+  triggered_rules: BackendTriggeredRule[];
+}
+
+interface StoredThreatResult {
+  receivedAt: string;
+  source: "process" | "process-pdf";
+  backendResponse: unknown;
+}
+
+interface LatestResultResponse {
+  ok: boolean;
+  hasData: boolean;
+  result: StoredThreatResult | null;
 }
 
 const TIER_CONFIG: Record<string, TierCfg> = {
@@ -175,11 +83,162 @@ const TIER_CONFIG: Record<string, TierCfg> = {
   },
 };
 
+const SIGNALS_INITIAL = 2;
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function fallbackLabel(key: string): string {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/* ── Score helpers ───────────────────────────────────────────────────────────── */
+function humanizeRuleId(ruleId: string): string {
+  return ruleId
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function toNumber(value: unknown, defaultValue = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return defaultValue;
+}
+
+function normalizeTriggeredRules(value: unknown): BackendTriggeredRule[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalized: BackendTriggeredRule[] = [];
+  for (const rule of value) {
+    if (!isObject(rule)) {
+      continue;
+    }
+
+    const id = typeof rule.id === "string" ? rule.id : "";
+    const bucket = typeof rule.bucket === "string" ? rule.bucket : "";
+    const points = toNumber(rule.points, 0);
+    if (!id || !bucket || points <= 0) {
+      continue;
+    }
+    normalized.push({ id, bucket, points });
+  }
+  return normalized;
+}
+
+function extractRiskAssessment(backendResponse: unknown): BackendRiskAssessment | null {
+  if (!isObject(backendResponse)) {
+    return null;
+  }
+
+  const direct = backendResponse.risk_assessment;
+  if (isObject(direct)) {
+    return {
+      bucket_scores: isObject(direct.bucket_scores)
+        ? {
+            content: toNumber(direct.bucket_scores.content),
+            banking: toNumber(direct.bucket_scores.banking),
+            domain: toNumber(direct.bucket_scores.domain),
+          }
+        : { content: 0, banking: 0, domain: 0 },
+      overall_risk_score: toNumber(direct.overall_risk_score),
+      risk_tier: typeof direct.risk_tier === "string" ? direct.risk_tier : "low",
+      triggered_rules: normalizeTriggeredRules(direct.triggered_rules),
+    };
+  }
+
+  const result = backendResponse.result;
+  if (!isObject(result)) {
+    return null;
+  }
+  const hackathon = result.hackathon_schema;
+  if (!isObject(hackathon)) {
+    return null;
+  }
+  const risk = hackathon.risk_assessment;
+  if (!isObject(risk)) {
+    return null;
+  }
+
+  return {
+    bucket_scores: isObject(risk.bucket_scores)
+      ? {
+          content: toNumber(risk.bucket_scores.content),
+          banking: toNumber(risk.bucket_scores.banking),
+          domain: toNumber(risk.bucket_scores.domain),
+        }
+      : { content: 0, banking: 0, domain: 0 },
+    overall_risk_score: toNumber(risk.overall_risk_score),
+    risk_tier: typeof risk.risk_tier === "string" ? risk.risk_tier : "low",
+    triggered_rules: normalizeTriggeredRules(risk.triggered_rules),
+  };
+}
+
+function ruleToTierKey(bucket: string): string {
+  if (bucket === "banking") {
+    return "hard_evidence";
+  }
+  if (bucket === "domain") {
+    return "structural_inconsistencies";
+  }
+  if (bucket === "content") {
+    return "behavioral_linguistic";
+  }
+  return "contextual_supporting";
+}
+
+function buildThreatModel(assessment: BackendRiskAssessment): ThreatModel {
+  const tiers: Record<string, Tier> = {
+    hard_evidence: {
+      tier_weight: toNumber(assessment.bucket_scores.banking),
+      signals: [],
+    },
+    structural_inconsistencies: {
+      tier_weight: toNumber(assessment.bucket_scores.domain),
+      signals: [],
+    },
+    behavioral_linguistic: {
+      tier_weight: toNumber(assessment.bucket_scores.content),
+      signals: [],
+    },
+    contextual_supporting: {
+      tier_weight: 0,
+      signals: [],
+    },
+  };
+
+  for (const rule of assessment.triggered_rules) {
+    const key = ruleToTierKey(rule.bucket);
+    tiers[key].signals.push({
+      id: rule.id,
+      description: humanizeRuleId(rule.id),
+      weight: rule.points,
+      triggered: true,
+    });
+  }
+
+  for (const [tierKey, tier] of Object.entries(tiers)) {
+    if (tier.signals.length === 0) {
+      tier.signals.push({
+        id: `no_${tierKey}_signals`,
+        description: "No high-confidence signals detected in this tier.",
+        weight: Math.max(tier.tier_weight, 1),
+        triggered: false,
+      });
+    }
+  }
+
+  return {
+    model_name: "wire_pdf_parser_v2",
+    total_weight: 100,
+    score: Math.max(0, Math.min(100, assessment.overall_risk_score)),
+    risk_tier: assessment.risk_tier.toLowerCase(),
+    tiers,
+  };
+}
 
 interface RiskLevel {
   label: string;
@@ -188,29 +247,31 @@ interface RiskLevel {
   border: string;
 }
 
-function getRiskLevel(score: number, total: number): RiskLevel {
-  const pct = (score / total) * 100;
-  if (pct <= 25)
+function getRiskLevel(score: number): RiskLevel {
+  if (score <= 25) {
     return {
       label: "Low Risk",
       color: "#7AA85C",
       bg: "rgba(122,168,92,0.12)",
       border: "rgba(122,168,92,0.38)",
     };
-  if (pct <= 50)
+  }
+  if (score <= 50) {
     return {
       label: "Moderate",
       color: "#C9843A",
       bg: "rgba(201,132,58,0.12)",
       border: "rgba(201,132,58,0.38)",
     };
-  if (pct <= 75)
+  }
+  if (score <= 75) {
     return {
       label: "High Risk",
       color: "#C75555",
       bg: "rgba(199,85,85,0.12)",
       border: "rgba(199,85,85,0.38)",
     };
+  }
   return {
     label: "Critical",
     color: "#8E2020",
@@ -219,34 +280,19 @@ function getRiskLevel(score: number, total: number): RiskLevel {
   };
 }
 
-function computeScore(data: ThreatModel): number {
-  let total = 0;
-  for (const tier of Object.values(data.tiers)) {
-    for (const sig of tier.signals) {
-      if (sig.triggered !== false) total += sig.weight;
-    }
-  }
-  return Math.min(total, data.total_weight);
-}
-
 function countSignals(data: ThreatModel): { triggered: number; total: number } {
   let triggered = 0;
   let total = 0;
   for (const tier of Object.values(data.tiers)) {
     for (const sig of tier.signals) {
-      total++;
-      if (sig.triggered !== false) triggered++;
+      total += 1;
+      if (sig.triggered !== false) {
+        triggered += 1;
+      }
     }
   }
   return { triggered, total };
 }
-
-/* ── SVG Gauge ───────────────────────────────────────────────────────────────── */
-/*
- * 270° arc (75 % of circumference). Gap sits at the bottom.
- * Achieved with rotate(135°) which shifts the default top-gap down.
- * Track color is light on the white card; fill is the risk-level color.
- */
 
 function RiskGauge({
   score,
@@ -255,14 +301,14 @@ function RiskGauge({
   score: number;
   totalWeight: number;
 }) {
-  const RADIUS = 82;
+  const radius = 82;
   const cx = 110;
   const cy = 112;
-  const C = 2 * Math.PI * RADIUS;
-  const TRACK = 0.75 * C;
+  const circumference = 2 * Math.PI * radius;
+  const track = 0.75 * circumference;
   const ratio = score / totalWeight;
-  const fill = ratio * TRACK;
-  const { color } = getRiskLevel(score, totalWeight);
+  const fill = ratio * track;
+  const { color } = getRiskLevel(score);
 
   return (
     <svg
@@ -271,31 +317,28 @@ function RiskGauge({
       role="img"
       aria-label={`Risk score: ${score} out of ${totalWeight}`}
     >
-      {/* Track arc */}
       <circle
         cx={cx}
         cy={cy}
-        r={RADIUS}
+        r={radius}
         fill="none"
         stroke="rgba(28,76,112,0.09)"
         strokeWidth="14"
         strokeLinecap="round"
-        strokeDasharray={`${TRACK} ${C - TRACK}`}
+        strokeDasharray={`${track} ${circumference - track}`}
         transform={`rotate(135,${cx},${cy})`}
       />
-      {/* Fill arc */}
       <circle
         cx={cx}
         cy={cy}
-        r={RADIUS}
+        r={radius}
         fill="none"
         stroke={color}
         strokeWidth="14"
         strokeLinecap="round"
-        strokeDasharray={`${fill} ${C - fill}`}
+        strokeDasharray={`${fill} ${circumference - fill}`}
         transform={`rotate(135,${cx},${cy})`}
       />
-      {/* Score number */}
       <text
         x={cx}
         y={cy - 8}
@@ -306,7 +349,6 @@ function RiskGauge({
       >
         {score}
       </text>
-      {/* Denominator */}
       <text
         x={cx}
         y={cy + 17}
@@ -322,18 +364,12 @@ function RiskGauge({
   );
 }
 
-/* ── Tier Card (with expandable signals) ─────────────────────────────────────── */
-
-const SIGNALS_INITIAL = 2;
-
 function TierCard({
   tierKey,
   tier,
-  totalWeight,
 }: {
   tierKey: string;
   tier: Tier;
-  totalWeight: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg: TierCfg | undefined = TIER_CONFIG[tierKey];
@@ -342,13 +378,10 @@ function TierCard({
   const bg = cfg?.bg ?? "rgba(75,123,167,0.1)";
   const border = cfg?.border ?? "rgba(75,123,167,0.35)";
 
-  // Triggered subset
   const triggeredSignals = tier.signals.filter((s) => s.triggered !== false);
   const triggeredWeight = triggeredSignals.reduce((sum, s) => sum + s.weight, 0);
   const triggeredPct =
     tier.tier_weight > 0 ? (triggeredWeight / tier.tier_weight) * 100 : 0;
-
-  // Expandable list (all signals, triggered first)
   const sorted = [
     ...tier.signals.filter((s) => s.triggered !== false),
     ...tier.signals.filter((s) => s.triggered === false),
@@ -357,22 +390,14 @@ function TierCard({
   const hiddenCount = sorted.length - SIGNALS_INITIAL;
 
   return (
-    <article
-      className={styles.tierCard}
-      style={{ borderLeftColor: color }}
-    >
-      {/* Card header */}
+    <article className={styles.tierCard} style={{ borderLeftColor: color }}>
       <div className={styles.tierCardTop}>
         <h3 className={styles.tierCardTitle}>{label}</h3>
-        <span
-          className={styles.tierWeightPill}
-          style={{ color, background: bg, borderColor: border }}
-        >
+        <span className={styles.tierWeightPill} style={{ color, background: bg, borderColor: border }}>
           {tier.tier_weight}pts
         </span>
       </div>
 
-      {/* Trigger summary + progress bar */}
       <div className={styles.tierStatRow}>
         <span className={styles.tierStatLabel}>
           {triggeredSignals.length} of {tier.signals.length} signals detected
@@ -382,54 +407,36 @@ function TierCard({
         </span>
       </div>
       <div className={styles.tierProgressTrack}>
-        <div
-          className={styles.tierProgressFill}
-          style={{ width: `${triggeredPct}%`, background: color }}
-        />
+        <div className={styles.tierProgressFill} style={{ width: `${triggeredPct}%`, background: color }} />
       </div>
 
-      {/* Signal list */}
       <div className={styles.signalList}>
         {visible.map((signal) => {
           const active = signal.triggered !== false;
-          const barPct = (signal.weight / tier.tier_weight) * 100;
+          const barPct = tier.tier_weight > 0 ? (signal.weight / tier.tier_weight) * 100 : 0;
           return (
             <div key={signal.id} className={styles.signalRow}>
               <div className={styles.signalMeta}>
                 <div className={styles.signalIdRow}>
-                  {/* Status dot */}
                   <span
                     className={styles.signalDot}
-                    style={{
-                      background: active
-                        ? color
-                        : "rgba(90,107,128,0.22)",
-                    }}
+                    style={{ background: active ? color : "rgba(90,107,128,0.22)" }}
                   />
-                  <span
-                    className={`${styles.signalId} ${
-                      !active ? styles.signalIdMuted : ""
-                    }`}
-                  >
+                  <span className={`${styles.signalId} ${!active ? styles.signalIdMuted : ""}`}>
                     {signal.id}
                   </span>
                 </div>
                 <span
                   className={styles.signalWeightLabel}
-                  style={{
-                    color: active ? color : "rgba(90,107,128,0.40)",
-                  }}
+                  style={{ color: active ? color : "rgba(90,107,128,0.40)" }}
                 >
                   +{signal.weight}
                 </span>
               </div>
 
-              {/* Only show description + bar for triggered signals */}
               {active && (
                 <>
-                  <p className={styles.signalDescription}>
-                    {signal.description}
-                  </p>
+                  <p className={styles.signalDescription}>{signal.description}</p>
                   <div className={styles.signalBarTrack}>
                     <div
                       className={styles.signalBarFill}
@@ -443,7 +450,6 @@ function TierCard({
         })}
       </div>
 
-      {/* Expand / collapse */}
       {hiddenCount > 0 && (
         <button
           type="button"
@@ -451,38 +457,78 @@ function TierCard({
           style={{ color }}
           onClick={() => setExpanded((v) => !v)}
         >
-          {expanded
-            ? "Show less"
-            : `+${hiddenCount} more signal${hiddenCount > 1 ? "s" : ""}`}
+          {expanded ? "Show less" : `+${hiddenCount} more signal${hiddenCount > 1 ? "s" : ""}`}
         </button>
       )}
     </article>
   );
 }
 
-/* ── Page ────────────────────────────────────────────────────────────────────── */
-
 export default function ThreatSummaryPage() {
-  const data = MOCK_RESULT;
-  const score = computeScore(data);
-  const { triggered: triggeredCount, total: totalSignals } = countSignals(data);
-  const risk = getRiskLevel(score, data.total_weight);
-  const tierEntries = Object.entries(data.tiers);
+  const [data, setData] = useState<ThreatModel | null>(null);
+  const [status, setStatus] = useState("Loading latest backend analysis...");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadThreatData() {
+      try {
+        const response = await fetch(`/api/gmail-ingest/latest-result?t=${Date.now()}`, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as LatestResultResponse;
+        if (!active) {
+          return;
+        }
+
+        if (!payload.hasData || !payload.result) {
+          setData(null);
+          setStatus("No backend analysis found yet. Run a threat check first.");
+          return;
+        }
+
+        const assessment = extractRiskAssessment(payload.result.backendResponse);
+        if (!assessment) {
+          setData(null);
+          setStatus("Latest backend response did not include risk assessment data.");
+          return;
+        }
+
+        setData(buildThreatModel(assessment));
+        setStatus(`Loaded backend analysis from ${new Date(payload.result.receivedAt).toLocaleString()}.`);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setData(null);
+        setStatus("Failed to load threat summary data from backend.");
+      }
+    }
+
+    void loadThreatData();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const score = data?.score ?? 0;
+  const totalWeight = data?.total_weight ?? 100;
+  const risk = getRiskLevel(score);
+  const signalCounts = useMemo(() => (data ? countSignals(data) : { triggered: 0, total: 0 }), [data]);
+  const tierEntries = data ? Object.entries(data.tiers) : [];
 
   return (
     <DashboardShell
       title="Threat Summary"
       subtitle="AI-powered signal analysis for real estate wire fraud detection."
+      statusText={status}
     >
       <div className={styles.threatGrid}>
-
-        {/* ── Score Hero ── */}
         <div className={styles.scoreHero}>
-
-          {/* Left: gauge */}
           <div className={styles.gaugePane}>
             <p className={styles.gaugeTopLabel}>Overall Risk Score</p>
-            <RiskGauge score={score} totalWeight={data.total_weight} />
+            <RiskGauge score={score} totalWeight={totalWeight} />
             <span
               className={styles.riskCategoryBadge}
               style={{
@@ -495,27 +541,22 @@ export default function ThreatSummaryPage() {
             </span>
           </div>
 
-          {/* Right: stats + tier breakdown */}
           <div className={styles.infoPane}>
             <div>
               <h2 className={styles.infoHeading}>Threat Assessment</h2>
-              <p className={styles.infoModelName}>{data.model_name}</p>
+              <p className={styles.infoModelName}>{data?.model_name ?? "No active analysis"}</p>
             </div>
 
-            {/* Stat pills */}
             <div className={styles.heroStats}>
               <div className={styles.heroStat}>
-                <span
-                  className={styles.heroStatNum}
-                  style={{ color: risk.color }}
-                >
-                  {triggeredCount}
+                <span className={styles.heroStatNum} style={{ color: risk.color }}>
+                  {signalCounts.triggered}
                 </span>
                 <span className={styles.heroStatLabel}>Detected</span>
               </div>
               <div className={styles.heroStatDivider} />
               <div className={styles.heroStat}>
-                <span className={styles.heroStatNum}>{totalSignals}</span>
+                <span className={styles.heroStatNum}>{signalCounts.total}</span>
                 <span className={styles.heroStatLabel}>Signals</span>
               </div>
               <div className={styles.heroStatDivider} />
@@ -525,25 +566,20 @@ export default function ThreatSummaryPage() {
               </div>
               <div className={styles.heroStatDivider} />
               <div className={styles.heroStat}>
-                <span className={styles.heroStatNum}>{data.total_weight}</span>
+                <span className={styles.heroStatNum}>{totalWeight}</span>
                 <span className={styles.heroStatLabel}>Max</span>
               </div>
             </div>
 
-            {/* Tier weight bars */}
             <div className={styles.tierBars}>
               {tierEntries.map(([key, tier]) => {
                 const cfg = TIER_CONFIG[key];
-                const pct = (tier.tier_weight / data.total_weight) * 100;
+                const pct = totalWeight > 0 ? (tier.tier_weight / totalWeight) * 100 : 0;
                 return (
                   <div key={key} className={styles.tierBarRow}>
                     <div className={styles.tierBarMeta}>
-                      <span className={styles.tierBarLabel}>
-                        {cfg?.label ?? fallbackLabel(key)}
-                      </span>
-                      <span className={styles.tierBarPts}>
-                        {tier.tier_weight}pts
-                      </span>
+                      <span className={styles.tierBarLabel}>{cfg?.label ?? fallbackLabel(key)}</span>
+                      <span className={styles.tierBarPts}>{tier.tier_weight}pts</span>
                     </div>
                     <div className={styles.tierBarTrack}>
                       <div
@@ -561,18 +597,11 @@ export default function ThreatSummaryPage() {
           </div>
         </div>
 
-        {/* ── Tier Cards ── */}
         <div className={styles.tierCardGrid}>
           {tierEntries.map(([key, tier]) => (
-            <TierCard
-              key={key}
-              tierKey={key}
-              tier={tier}
-              totalWeight={data.total_weight}
-            />
+            <TierCard key={key} tierKey={key} tier={tier} />
           ))}
         </div>
-
       </div>
     </DashboardShell>
   );

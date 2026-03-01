@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { setLatestThreatResult } from "../../../../lib/threatResultStore";
 
 export const runtime = "nodejs";
 
@@ -38,10 +39,19 @@ export async function POST(request: Request) {
   backendForm.append("file", file, file.name || "upload.pdf");
 
   try {
-    await fetch(pdfBackendUrl, {
+    const backendResponse = await fetch(pdfBackendUrl, {
       method: "POST",
       body: backendForm
     });
+    const contentType = backendResponse.headers.get("content-type") ?? "";
+    if (backendResponse.ok && contentType.includes("application/json")) {
+      const parsed = (await backendResponse.json()) as unknown;
+      setLatestThreatResult({
+        receivedAt: new Date().toISOString(),
+        source: "process-pdf",
+        backendResponse: parsed
+      });
+    }
   } catch {
     // Fail silently by design in this prototype.
   }
